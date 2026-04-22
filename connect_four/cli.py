@@ -79,6 +79,12 @@ def _build_parser() -> argparse.ArgumentParser:
         default=1,
         help="Number of games for headless ai-vs-ai (default: 1).",
     )
+    parser.add_argument(
+        "--timeout",
+        type=float,
+        default=None,
+        help="Timeout in seconds for each AI move (UNIX only).",
+    )
     return parser
 
 
@@ -90,9 +96,14 @@ def main() -> None:
         ai = _load_ai_class(args.ai)
         game = Game()
         # ai_player plays as PLAYER_2, human is always PLAYER_1
-        from connect_four.renderer import run_visual
+        from connect_four.game_controller import VisualGameController
+        from connect_four.renderer import PygameRenderer
 
-        run_visual(game, ai_player=ai)
+        renderer = PygameRenderer(game)
+        controller = VisualGameController(
+            game, renderer, ai=ai, timeout_seconds=args.timeout
+        )
+        controller.run()
 
     elif args.mode == "ai-vs-ai":
         ai1 = _load_ai_class(args.ai1)
@@ -104,7 +115,11 @@ def main() -> None:
             run_headless(ai1, ai2, games=args.games)
         else:
             game = Game()
-            from connect_four.renderer import run_visual
+            from connect_four.game_controller import VisualGameController
+            from connect_four.renderer import PygameRenderer
 
-            # Swap params: ai2_player → PLAYER_1 (ai1), ai_player → PLAYER_2 (ai2)
-            run_visual(game, ai_player=ai2, ai2_player=ai1)
+            renderer = PygameRenderer(game)
+            controller = VisualGameController(
+                game, renderer, ai1=ai1, ai2=ai2, timeout_seconds=args.timeout
+            )
+            controller.run()
