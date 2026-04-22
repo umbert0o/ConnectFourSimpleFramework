@@ -11,9 +11,6 @@ if TYPE_CHECKING:
 
 
 class RandomAI(AIBase):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def choose_move(self, board: Board, player: Player) -> int:
         return random.choice(board.get_valid_moves())
 
