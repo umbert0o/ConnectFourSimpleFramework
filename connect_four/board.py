@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from connect_four.player import EMPTY
+from connect_four.player import EMPTY, Player
 
 
 class Board:
@@ -45,7 +45,7 @@ class Board:
     def is_full(self) -> bool:
         return len(self.get_valid_moves()) == 0
 
-    def drop_piece(self, col: int, player: int) -> Board:
+    def drop_piece(self, col: int, player: Player) -> Board:
         if col < 0 or col >= self._cols:
             raise ValueError(f"Column {col} is out of range")
         if self._grid[0][col] != EMPTY:
@@ -71,7 +71,7 @@ class Board:
 
         return Board(self._rows, self._cols, tuple(new_rows))
 
-    def check_winner(self) -> int | None:
+    def check_winner(self) -> Player | None:
         directions = [(0, 1), (1, 0), (1, 1), (1, -1)]
         for r in range(self._rows):
             for c in range(self._cols):
@@ -83,7 +83,32 @@ class Board:
                         return player
         return None
 
-    def _check_line(self, row: int, col: int, dr: int, dc: int, player: int) -> bool:
+    def get_winning_cells(self) -> list[tuple[int, int]]:
+        """Return the 4 cells forming the winning line, or [] if no winner."""
+        directions = [(0, 1), (1, 0), (1, 1), (1, -1)]
+        for r in range(self._rows):
+            for c in range(self._cols):
+                player = self._grid[r][c]
+                if player == EMPTY:
+                    continue
+                for dr, dc in directions:
+                    cells: list[tuple[int, int]] = []
+                    valid = True
+                    for i in range(4):
+                        ri = r + dr * i
+                        ci = c + dc * i
+                        if ri < 0 or ri >= self._rows or ci < 0 or ci >= self._cols:
+                            valid = False
+                            break
+                        if self._grid[ri][ci] != player:
+                            valid = False
+                            break
+                        cells.append((ri, ci))
+                    if valid and len(cells) == 4:
+                        return cells
+        return []
+
+    def _check_line(self, row: int, col: int, dr: int, dc: int, player: Player) -> bool:
         for i in range(4):
             r = row + dr * i
             c = col + dc * i

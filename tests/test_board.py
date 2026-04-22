@@ -93,6 +93,12 @@ class TestDropPiece:
         with pytest.raises(ValueError, match="full"):
             b.drop_piece(0, Player.PLAYER_2)
 
+    def test_drop_piece_accepts_player_enum(self, empty_board: Board) -> None:
+        """drop_piece accepts Player enum values directly."""
+        b = empty_board.drop_piece(0, Player.PLAYER_1)
+        assert b.get_cell(5, 0) == Player.PLAYER_1
+        assert b.get_cell(5, 0) == 1
+
 
 # ---------------------------------------------------------------------------
 # 3. is_valid_move
@@ -236,11 +242,16 @@ class TestCheckWinner:
         assert result == Player.PLAYER_1
 
     def test_player_2_can_win(self) -> None:
-        """PLAYER_2 wins horizontally."""
         b = Board()
         for c in range(4):
             b = b.drop_piece(c, Player.PLAYER_2)
         assert b.check_winner() == Player.PLAYER_2
+
+    def test_check_winner_returns_player_type(self) -> None:
+        b = self._build_horizontal_win()
+        winner = b.check_winner()
+        assert winner is not None
+        assert type(winner) is Player
 
 
 # ---------------------------------------------------------------------------
@@ -339,3 +350,84 @@ class TestColumnBoundary:
     def test_is_valid_move_boundaries(self, empty_board: Board) -> None:
         assert empty_board.is_valid_move(0) is True
         assert empty_board.is_valid_move(6) is True
+
+
+# ---------------------------------------------------------------------------
+# 11. get_winning_cells
+# ---------------------------------------------------------------------------
+
+
+class TestGetWinningCells:
+    def _build_horizontal_win(self) -> Board:
+        b = Board()
+        for c in range(4):
+            b = b.drop_piece(c, Player.PLAYER_1)
+        return b
+
+    def _build_vertical_win(self) -> Board:
+        b = Board()
+        for _ in range(4):
+            b = b.drop_piece(3, Player.PLAYER_1)
+        return b
+
+    def _build_diagonal_down_right(self) -> Board:
+        b = Board()
+        b = b.drop_piece(0, Player.PLAYER_1)
+        b = b.drop_piece(1, Player.PLAYER_2)
+        b = b.drop_piece(1, Player.PLAYER_1)
+        b = b.drop_piece(2, Player.PLAYER_2)
+        b = b.drop_piece(2, Player.PLAYER_2)
+        b = b.drop_piece(2, Player.PLAYER_1)
+        b = b.drop_piece(3, Player.PLAYER_2)
+        b = b.drop_piece(3, Player.PLAYER_2)
+        b = b.drop_piece(3, Player.PLAYER_2)
+        b = b.drop_piece(3, Player.PLAYER_1)
+        return b
+
+    def _build_diagonal_down_left(self) -> Board:
+        b = Board()
+        b = b.drop_piece(6, Player.PLAYER_1)
+        b = b.drop_piece(5, Player.PLAYER_2)
+        b = b.drop_piece(5, Player.PLAYER_1)
+        b = b.drop_piece(4, Player.PLAYER_2)
+        b = b.drop_piece(4, Player.PLAYER_2)
+        b = b.drop_piece(4, Player.PLAYER_1)
+        b = b.drop_piece(3, Player.PLAYER_2)
+        b = b.drop_piece(3, Player.PLAYER_2)
+        b = b.drop_piece(3, Player.PLAYER_2)
+        b = b.drop_piece(3, Player.PLAYER_1)
+        return b
+
+    def test_horizontal_win_returns_4_cells(self) -> None:
+        b = self._build_horizontal_win()
+        cells = b.get_winning_cells()
+        assert len(cells) == 4
+        assert cells == [(5, 0), (5, 1), (5, 2), (5, 3)]
+
+    def test_vertical_win_returns_4_cells(self) -> None:
+        b = self._build_vertical_win()
+        cells = b.get_winning_cells()
+        assert len(cells) == 4
+        assert cells == [(2, 3), (3, 3), (4, 3), (5, 3)]
+
+    def test_diagonal_down_right_returns_4_cells(self) -> None:
+        b = self._build_diagonal_down_right()
+        cells = b.get_winning_cells()
+        assert len(cells) == 4
+        assert cells == [(2, 3), (3, 2), (4, 1), (5, 0)]
+
+    def test_diagonal_down_left_returns_4_cells(self) -> None:
+        b = self._build_diagonal_down_left()
+        cells = b.get_winning_cells()
+        assert len(cells) == 4
+        assert cells == [(2, 3), (3, 4), (4, 5), (5, 6)]
+
+    def test_no_winner_returns_empty_list(self, empty_board: Board) -> None:
+        assert empty_board.get_winning_cells() == []
+
+    def test_partial_board_no_winner_returns_empty_list(self) -> None:
+        b = Board()
+        b = b.drop_piece(0, Player.PLAYER_1)
+        b = b.drop_piece(1, Player.PLAYER_2)
+        b = b.drop_piece(2, Player.PLAYER_1)
+        assert b.get_winning_cells() == []
