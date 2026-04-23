@@ -7,6 +7,12 @@ from connect_four.game.player import EMPTY, Player
 
 HEADER_HEIGHT = 80
 
+# Info panel (right side)
+PANEL_WIDTH = 280
+PANEL_PADDING = 15
+PANEL_BG_COLOR = (25, 25, 40)
+PANEL_BORDER_COLOR = (60, 60, 80)
+
 BG_COLOR = (30, 30, 30)
 BOARD_COLOR = (0, 70, 170)
 EMPTY_COLOR = (20, 20, 20)
@@ -23,12 +29,12 @@ _PLAYER_COLOR: dict[int, tuple[int, int, int]] = {
 
 
 def _compute_dimensions(
-    rows: int, cols: int, cell_size: int, header_height: int
+    rows: int, cols: int, cell_size: int, header_height: int, panel_width: int = 0
 ) -> tuple[int, int, int, int]:
     """Return (window_width, window_height, board_width, board_height)."""
     board_width = cols * cell_size
     board_height = rows * cell_size
-    window_width = board_width
+    window_width = board_width + panel_width
     window_height = board_height + header_height
     return window_width, window_height, board_width, board_height
 
@@ -42,15 +48,16 @@ class PygameRenderer:
             self._window_height,
             self._board_width,
             self._board_height,
-        ) = _compute_dimensions(rows, cols, cell_size, HEADER_HEIGHT)
+        ) = _compute_dimensions(rows, cols, cell_size, HEADER_HEIGHT, PANEL_WIDTH)
 
-        if self._window_width > 1200 or self._window_height > 900:
+        if self._window_width > 1480 or self._window_height > 900:
             raise ValueError(
                 f"Computed window size {self._window_width}x{self._window_height} "
-                f"exceeds maximum 1200x900. Reduce cell_size."
+                f"exceeds maximum 1480x900. Reduce cell_size."
             )
 
         self._cell_size = cell_size
+        self._panel_width = PANEL_WIDTH
         pygame.init()
         self._game = game
         self._screen = pygame.display.set_mode(
@@ -118,9 +125,15 @@ class PygameRenderer:
     def handle_events(self) -> tuple[str, int | None]:
         """Returns ("move", col), ("quit", None), or ("none", None)."""
         mouse_x, _ = pygame.mouse.get_pos()
-        self._hover_col = mouse_x // self._cell_size
+        # Clamp to board area
+        if mouse_x >= self._board_width:
+            self._hover_col = None
+        else:
+            self._hover_col = mouse_x // self._cell_size
         board = self._game.board
-        if self._hover_col < 0 or self._hover_col >= board.cols:
+        if self._hover_col is not None and (
+            self._hover_col < 0 or self._hover_col >= board.cols
+        ):
             self._hover_col = None
 
         for event in pygame.event.get():
@@ -130,6 +143,8 @@ class PygameRenderer:
                 return ("quit", None)
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 col = event.pos[0] // self._cell_size
+                if event.pos[0] >= self._board_width:
+                    continue  # Clicked in panel area — ignore
                 if 0 <= col < board.cols and board.is_valid_move(col):
                     return ("move", col)
         return ("none", None)
@@ -152,6 +167,6 @@ class PygameRenderer:
             else (255, 255, 255)
         )
         surface = self._font.render(text, True, colour)
-        x = (self._window_width - surface.get_width()) // 2
+        x = (self._board_width - surface.get_width()) // 2
         y = (HEADER_HEIGHT - surface.get_height()) // 2
         self._screen.blit(surface, (x, y))
