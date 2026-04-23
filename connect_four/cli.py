@@ -74,6 +74,11 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Timeout in seconds for each AI move (UNIX only).",
     )
+    parser.add_argument(
+        "--output",
+        default=None,
+        help="Export headless results to a JSON file.",
+    )
     return parser
 
 
@@ -89,7 +94,7 @@ def main() -> None:
             parser.error("--headless requires both --p1-ai and --p2-ai.")
         from connect_four.headless_runner import run_headless
 
-        run_headless(p1_ai, p2_ai, games=args.games)
+        run_headless(p1_ai, p2_ai, games=args.games, output_path=args.output)
         return
 
     game = Game()
