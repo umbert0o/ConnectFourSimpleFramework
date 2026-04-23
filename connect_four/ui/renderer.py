@@ -3,6 +3,7 @@ from __future__ import annotations
 import pygame
 
 from connect_four.game.board import Board
+from connect_four.game.metrics import MetricsTracker
 from connect_four.game.player import EMPTY, Player
 
 HEADER_HEIGHT = 80
@@ -69,6 +70,13 @@ class PygameRenderer:
         self._hover_col: int | None = None
         self._win_cells: list[tuple[int, int]] | None = None
 
+        from connect_four.ui.info_panel import InfoPanel
+
+        self._info_panel = InfoPanel(
+            PANEL_WIDTH, self._board_height, self._small_font, self._small_font
+        )
+        self._tracker: MetricsTracker | None = None
+
     def render(self) -> None:
         self._screen.fill(BG_COLOR)
 
@@ -120,6 +128,15 @@ class PygameRenderer:
                 (hx - preview.get_width() // 2, hy - preview.get_height() // 2),
             )
 
+        if self._tracker is not None:
+            self._info_panel.draw(
+                self._screen,
+                self._board_width,
+                self._tracker,
+                self._game.current_player,
+                game_over=self._game.is_over,
+            )
+
         pygame.display.flip()
 
     def handle_events(self) -> tuple[str, int | None]:
@@ -159,6 +176,9 @@ class PygameRenderer:
 
     def close(self) -> None:
         pygame.quit()
+
+    def set_tracker(self, tracker: MetricsTracker) -> None:
+        self._tracker = tracker
 
     def _draw_status(self, text: str) -> None:
         colour = (

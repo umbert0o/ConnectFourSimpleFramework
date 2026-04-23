@@ -6,12 +6,14 @@ Timeout uses signal.alarm (UNIX only). On Windows, timeout is ignored.
 from __future__ import annotations
 
 import signal
+import time
 
 import pygame
 
 from connect_four.ai.ai_base import AIBase
 from connect_four.game.board import Board
 from connect_four.game.game import Game
+from connect_four.game.metrics import MetricsTracker
 from connect_four.game.player import Player
 from connect_four.ui.renderer import PygameRenderer
 
@@ -61,14 +63,40 @@ class VisualGameController:
         if p2_ai is not None:
             self._ai_map[Player.PLAYER_2] = p2_ai
 
+        # Determine mode and player names for metrics
+        if p1_ai is not None and p2_ai is not None:
+            mode = "ai_vs_ai"
+            p1_name = p1_ai.name
+            p2_name = p2_ai.name
+        elif p1_ai is not None:
+            mode = "human_vs_ai"
+            p1_name = "Human"
+            p2_name = p1_ai.name
+        elif p2_ai is not None:
+            mode = "human_vs_ai"
+            p1_name = "Human"
+            p2_name = p2_ai.name
+        else:
+            mode = "human_vs_human"
+            p1_name = "Human"
+            p2_name = "Human"
+
+        self._tracker = MetricsTracker(p1_name, p2_name, mode)
+        renderer.set_tracker(self._tracker)
+
     def run(self) -> None:
         """Run a visual (pygame) game session."""
         clock = pygame.time.Clock()
+        self._tracker.start_game()
         try:
             while True:
                 self._renderer.render()
 
                 if self._game.is_over:
+                    if self._game.winner is not None:
+                        self._tracker.end_game(self._game.winner.value)
+                    else:
+                        self._tracker.end_game(None)
                     if self._game.winner is not None:
                         self._renderer.highlight_win(
                             self._game.board, self._game.winner
@@ -87,7 +115,11 @@ class VisualGameController:
                     return
                 if action == "move" and col is not None:
                     if self._game.board.is_valid_move(col):
+                        player = self._game.current_player
                         self._game.make_move(col)
+                        self._tracker.record_move(
+                            player, col, duration=None, is_ai=False
+                        )
                 clock.tick(60)
         finally:
             self._renderer.close()
@@ -100,6 +132,8 @@ class VisualGameController:
         active = self._ai_map.get(current)
         if active is None:
             return
+
+        start = time.perf_counter()
 
         if self._timeout_seconds is not None:
 
@@ -118,7 +152,9 @@ class VisualGameController:
         else:
             col = _validate_ai_move(active, self._game.board, current)
 
+        duration = time.perf_counter() - start
         self._game.make_move(col)
+        self._tracker.record_move(current, col, duration=duration, is_ai=True)
 
         if len(self._ai_map) == 2:
             self._renderer.render()
