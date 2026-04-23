@@ -16,27 +16,6 @@ from connect_four.game.player import Player
 from connect_four.ui.renderer import PygameRenderer
 
 
-def _validate_ai_params(
-    ai: AIBase | None, ai1: AIBase | None, ai2: AIBase | None
-) -> None:
-    """Validate AI parameter combination.
-
-    Modes:
-      - Human-vs-AI: pass ``ai`` only (plays as PLAYER_2).
-      - AI-vs-AI: pass both ``ai1`` (PLAYER_1) and ``ai2`` (PLAYER_2).
-      - Human-vs-Human: pass nothing.
-    """
-    if ai is not None and (ai1 is not None or ai2 is not None):
-        raise ValueError(
-            "Cannot specify both 'ai' and 'ai1'/'ai2'. "
-            "Use 'ai' for human-vs-ai or 'ai1'+'ai2' for ai-vs-ai."
-        )
-    if ai1 is not None and ai2 is None:
-        raise ValueError("Must specify both 'ai1' and 'ai2' for ai-vs-ai mode.")
-    if ai2 is not None and ai1 is None:
-        raise ValueError("Must specify both 'ai1' and 'ai2' for ai-vs-ai mode.")
-
-
 def _validate_ai_move(ai: AIBase, board: Board, player: Player) -> int:
     """Call *ai* and validate the returned column.
 
@@ -55,29 +34,32 @@ def _validate_ai_move(ai: AIBase, board: Board, player: Player) -> int:
 class VisualGameController:
     """Orchestrates a visual (pygame) game session.
 
-    Modes:
-      - Human-vs-AI: pass ``ai`` only. Human plays as PLAYER_1, AI as PLAYER_2.
-      - AI-vs-AI: pass both ``ai1`` (PLAYER_1) and ``ai2`` (PLAYER_2).
-        Both play automatically with 0.5s delay.
-      - Human-vs-Human: pass nothing.
+    Args:
+        game: Game instance.
+        renderer: PygameRenderer instance.
+        p1_ai: Optional AI for Player 1. If None, P1 is human-controlled.
+        p2_ai: Optional AI for Player 2. If None, P2 is human-controlled.
+        timeout_seconds: Optional per-move timeout (UNIX only).
     """
 
     def __init__(
         self,
         game: Game,
         renderer: PygameRenderer,
-        ai: AIBase | None = None,
-        ai1: AIBase | None = None,
-        ai2: AIBase | None = None,
+        p1_ai: AIBase | None = None,
+        p2_ai: AIBase | None = None,
         timeout_seconds: float | None = None,
     ) -> None:
-        _validate_ai_params(ai, ai1, ai2)
         self._game = game
         self._renderer = renderer
-        self._ai = ai
-        self._ai1 = ai1
-        self._ai2 = ai2
+        self._p1_ai = p1_ai
+        self._p2_ai = p2_ai
         self._timeout_seconds = timeout_seconds
+        self._ai_map: dict[Player, AIBase] = {}
+        if p1_ai is not None:
+            self._ai_map[Player.PLAYER_1] = p1_ai
+        if p2_ai is not None:
+            self._ai_map[Player.PLAYER_2] = p2_ai
 
     def run(self) -> None:
         """Run a visual (pygame) game session."""
@@ -111,27 +93,12 @@ class VisualGameController:
             self._renderer.close()
 
     def _is_ai_turn(self) -> bool:
-        # Human-vs-AI: ai plays as PLAYER_2
-        if self._ai is not None and self._game.current_player == Player.PLAYER_2:
-            return True
-        # AI-vs-AI: ai1 plays as PLAYER_1, ai2 plays as PLAYER_2
-        if self._ai1 is not None and self._game.current_player == Player.PLAYER_1:
-            return True
-        if self._ai2 is not None and self._game.current_player == Player.PLAYER_2:
-            return True
-        return False
+        return self._game.current_player in self._ai_map
 
     def _do_ai_move(self) -> None:
         current = self._game.current_player
-        # Human-vs-AI: ai plays as PLAYER_2
-        if current == Player.PLAYER_2 and self._ai is not None:
-            active = self._ai
-        # AI-vs-AI: ai1 → PLAYER_1, ai2 → PLAYER_2
-        elif current == Player.PLAYER_1 and self._ai1 is not None:
-            active = self._ai1
-        elif current == Player.PLAYER_2 and self._ai2 is not None:
-            active = self._ai2
-        else:
+        active = self._ai_map.get(current)
+        if active is None:
             return
 
         if self._timeout_seconds is not None:
@@ -153,7 +120,7 @@ class VisualGameController:
 
         self._game.make_move(col)
 
-        if self._ai1 is not None and self._ai2 is not None:
+        if len(self._ai_map) == 2:
             self._renderer.render()
             pygame.time.delay(500)
 
