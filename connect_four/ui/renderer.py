@@ -1,10 +1,15 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import pygame
 
 from connect_four.game.board import Board
 from connect_four.game.metrics import MetricsTracker
 from connect_four.game.player import EMPTY, Player
+
+if TYPE_CHECKING:
+    from connect_four.game.game import Game
 
 HEADER_HEIGHT = 80
 

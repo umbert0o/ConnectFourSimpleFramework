@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pygame
 
-from connect_four.game.metrics import MetricsTracker
+from connect_four.game.metrics import MoveRecord, MetricsTracker
 from connect_four.game.player import Player
 from connect_four.ui.renderer import (
     PANEL_BG_COLOR,
@@ -126,7 +126,7 @@ class InfoPanel:
     def _draw_move_log(
         self,
         surface: pygame.Surface,
-        moves: list[MetricsTracker],
+        moves: list[MoveRecord],
         y_start: int,
         available_height: int,
         x_offset: int,

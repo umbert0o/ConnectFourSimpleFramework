@@ -1,9 +1,5 @@
 """Tests for connect_four.ui.info_panel module."""
 
-import os
-
-os.environ["SDL_VIDEODRIVER"] = "dummy"
-
 import pygame
 
 import pytest
