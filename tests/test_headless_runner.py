@@ -1,5 +1,7 @@
 """Characterization tests for headless_runner and Board.get_winning_cells."""
 
+import json
+
 import pytest
 
 from connect_four.ai.ai_base import AIBase
@@ -213,3 +215,69 @@ class TestFindWinningCellsNoWin:
         b = b.drop_piece(2, Player.PLAYER_1)
         cells = b.get_winning_cells()
         assert cells == []
+
+
+# ---------------------------------------------------------------------------
+# 9. run_headless — output_path / JSON export
+# ---------------------------------------------------------------------------
+
+
+class TestOutputPath:
+    def test_output_path_parameter_exists(self) -> None:
+        import inspect
+
+        sig = inspect.signature(run_headless)
+        assert "output_path" in sig.parameters
+
+    def test_json_export_creates_file(self) -> None:
+        import os
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+            path = f.name
+        try:
+            run_headless(RandomAI(), RandomAI(), games=1, output_path=path)
+            assert os.path.exists(path)
+            with open(path) as f:
+                data = json.load(f)
+            assert "games" in data
+            assert "summary" in data
+        finally:
+            if os.path.exists(path):
+                os.unlink(path)
+
+    def test_json_export_contains_valid_game_data(self) -> None:
+        import os
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+            path = f.name
+        try:
+            run_headless(RandomAI(), RandomAI(), games=1, output_path=path)
+            with open(path) as f:
+                data = json.load(f)
+            assert len(data["games"]) == 1
+            assert len(data["games"][0]["moves"]) > 0
+            assert "p1_name" in data
+            assert "p2_name" in data
+        finally:
+            os.unlink(path)
+
+    def test_json_summary_matches_results(self) -> None:
+        import os
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+            path = f.name
+        try:
+            run_headless(RandomAI(), RandomAI(), games=1, output_path=path)
+            with open(path) as f:
+                data = json.load(f)
+            total = (
+                data["summary"]["player1_wins"]
+                + data["summary"]["player2_wins"]
+                + data["summary"]["draws"]
+            )
+            assert total == 1
+        finally:
+            os.unlink(path)
