@@ -4,8 +4,8 @@ import argparse
 import importlib
 import sys
 
-from connect_four.ai_base import AIBase
-from connect_four.game import Game
+from connect_four.ai.ai_base import AIBase
+from connect_four.game.game import Game
 
 
 def _load_ai_class(dotted_path: str) -> AIBase:
@@ -55,18 +55,18 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--ai",
-        default="connect_four.random_ai.RandomAI",
-        help="Dotted path to AI class for human-vs-ai mode (default: connect_four.random_ai.RandomAI).",
+        default="connect_four.ai.random_ai.RandomAI",
+        help="Dotted path to AI class for human-vs-ai mode (default: connect_four.ai.random_ai.RandomAI).",
     )
     parser.add_argument(
         "--ai1",
-        default="connect_four.random_ai.RandomAI",
-        help="Dotted path to Player 1 AI class for ai-vs-ai mode (default: connect_four.random_ai.RandomAI).",
+        default="connect_four.ai.random_ai.RandomAI",
+        help="Dotted path to Player 1 AI class for ai-vs-ai mode (default: connect_four.ai.random_ai.RandomAI).",
     )
     parser.add_argument(
         "--ai2",
-        default="connect_four.random_ai.RandomAI",
-        help="Dotted path to Player 2 AI class for ai-vs-ai mode (default: connect_four.random_ai.RandomAI).",
+        default="connect_four.ai.random_ai.RandomAI",
+        help="Dotted path to Player 2 AI class for ai-vs-ai mode (default: connect_four.ai.random_ai.RandomAI).",
     )
     parser.add_argument(
         "--headless",
@@ -96,8 +96,8 @@ def main() -> None:
         ai = _load_ai_class(args.ai)
         game = Game()
         # ai_player plays as PLAYER_2, human is always PLAYER_1
-        from connect_four.game_controller import VisualGameController
-        from connect_four.renderer import PygameRenderer
+        from connect_four.ui.game_controller import VisualGameController
+        from connect_four.ui.renderer import PygameRenderer
 
         renderer = PygameRenderer(game)
         controller = VisualGameController(
@@ -115,8 +115,8 @@ def main() -> None:
             run_headless(ai1, ai2, games=args.games)
         else:
             game = Game()
-            from connect_four.game_controller import VisualGameController
-            from connect_four.renderer import PygameRenderer
+            from connect_four.ui.game_controller import VisualGameController
+            from connect_four.ui.renderer import PygameRenderer
 
             renderer = PygameRenderer(game)
             controller = VisualGameController(

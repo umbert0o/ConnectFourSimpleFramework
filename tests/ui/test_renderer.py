@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from connect_four.renderer import _compute_dimensions, HEADER_HEIGHT
+from connect_four.ui.renderer import _compute_dimensions, HEADER_HEIGHT
 
 
 class TestComputeDimensions:
@@ -32,32 +32,32 @@ class TestComputeDimensions:
 
 class TestOldConstantsRemoved:
     def test_no_board_width_constant(self) -> None:
-        import connect_four.renderer as mod
+        import connect_four.ui.renderer as mod
 
         assert not hasattr(mod, "BOARD_WIDTH")
 
     def test_no_board_height_constant(self) -> None:
-        import connect_four.renderer as mod
+        import connect_four.ui.renderer as mod
 
         assert not hasattr(mod, "BOARD_HEIGHT")
 
     def test_no_window_width_constant(self) -> None:
-        import connect_four.renderer as mod
+        import connect_four.ui.renderer as mod
 
         assert not hasattr(mod, "WINDOW_WIDTH")
 
     def test_no_window_height_constant(self) -> None:
-        import connect_four.renderer as mod
+        import connect_four.ui.renderer as mod
 
         assert not hasattr(mod, "WINDOW_HEIGHT")
 
     def test_no_cell_size_constant(self) -> None:
-        import connect_four.renderer as mod
+        import connect_four.ui.renderer as mod
 
         assert not hasattr(mod, "CELL_SIZE")
 
     def test_header_height_still_exists(self) -> None:
-        import connect_four.renderer as mod
+        import connect_four.ui.renderer as mod
 
         assert hasattr(mod, "HEADER_HEIGHT")
         assert mod.HEADER_HEIGHT == 80

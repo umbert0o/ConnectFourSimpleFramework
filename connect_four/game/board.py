@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from connect_four.player import EMPTY, Player
+from connect_four.game.player import EMPTY, Player
 
 
 class Board:

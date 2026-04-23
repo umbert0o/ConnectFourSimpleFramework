@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from connect_four.board import Board
-from connect_four.player import Player
+from connect_four.game.board import Board
+from connect_four.game.player import Player
 
 
 class Game:

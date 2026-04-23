@@ -2,11 +2,11 @@
 
 import pytest
 
-from connect_four.ai_base import AIBase
-from connect_four.board import Board
+from connect_four.ai.ai_base import AIBase
+from connect_four.game.board import Board
 from connect_four.headless_runner import run_headless
-from connect_four.player import Player
-from connect_four.random_ai import RandomAI
+from connect_four.game.player import Player
+from connect_four.ai.random_ai import RandomAI
 
 
 # ---------------------------------------------------------------------------

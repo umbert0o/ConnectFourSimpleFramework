@@ -1,16 +1,16 @@
 """Connect Four Framework — A framework for implementing and testing Connect Four AI algorithms."""
 
-from connect_four.ai_base import AIBase
-from connect_four.board import Board
-from connect_four.board_helpers import (
+from connect_four.ai.ai_base import AIBase
+from connect_four.ai.board_helpers import (
     count_pieces,
     evaluate_window,
     get_all_windows,
     get_column_heights,
 )
-from connect_four.game import Game
-from connect_four.player import EMPTY, Player
-from connect_four.random_ai import RandomAI
+from connect_four.ai.random_ai import RandomAI
+from connect_four.game.board import Board
+from connect_four.game.game import Game
+from connect_four.game.player import EMPTY, Player
 
 __all__ = [
     "AIBase",

@@ -8,10 +8,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Generator
 
-from connect_four.player import EMPTY
+from connect_four.game.player import EMPTY
 
 if TYPE_CHECKING:
-    from connect_four.board import Board
+    from connect_four.game.board import Board
 
 
 def get_all_windows(board: Board, size: int = 4) -> Generator[list[int], None, None]:

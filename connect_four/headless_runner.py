@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from connect_four.ai_base import AIBase
-from connect_four.game import Game
-from connect_four.player import Player
+from connect_four.ai.ai_base import AIBase
+from connect_four.game.game import Game
+from connect_four.game.player import Player
 
 
 def run_headless(ai1: AIBase, ai2: AIBase, games: int = 1) -> dict[str, int]:

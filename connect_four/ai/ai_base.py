@@ -4,8 +4,8 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from connect_four.board import Board
-    from connect_four.player import Player
+    from connect_four.game.board import Board
+    from connect_four.game.player import Player
 
 
 class AIBase(ABC):

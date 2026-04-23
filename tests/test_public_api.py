@@ -12,18 +12,18 @@ def test_public_api_imports():
 
 
 def test_existing_import_paths_still_work():
-    """Submodule-level imports must remain functional (additive only)."""
-    from connect_four.ai_base import AIBase
-    from connect_four.board import Board
-    from connect_four.board_helpers import (
+    """Submodule-level imports must remain functional via sub-package paths."""
+    from connect_four.ai.ai_base import AIBase
+    from connect_four.game.board import Board
+    from connect_four.ai.board_helpers import (
         count_pieces,
         evaluate_window,
         get_all_windows,
         get_column_heights,
     )
-    from connect_four.game import Game
-    from connect_four.player import EMPTY, Player
-    from connect_four.random_ai import RandomAI
+    from connect_four.game.game import Game
+    from connect_four.game.player import EMPTY, Player
+    from connect_four.ai.random_ai import RandomAI
 
     assert AIBase is not None
     assert Board is not None

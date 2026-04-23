@@ -9,11 +9,11 @@ import signal
 
 import pygame
 
-from connect_four.ai_base import AIBase
-from connect_four.board import Board
-from connect_four.game import Game
-from connect_four.player import Player
-from connect_four.renderer import PygameRenderer
+from connect_four.ai.ai_base import AIBase
+from connect_four.game.board import Board
+from connect_four.game.game import Game
+from connect_four.game.player import Player
+from connect_four.ui.renderer import PygameRenderer
 
 
 def _validate_ai_params(

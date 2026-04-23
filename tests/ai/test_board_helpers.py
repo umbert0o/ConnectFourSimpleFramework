@@ -1,17 +1,17 @@
-"""Tests for connect_four.board_helpers — AI utility functions."""
+"""Tests for connect_four.ai.board_helpers — AI utility functions."""
 
 from __future__ import annotations
 
 import pytest
 
-from connect_four.board import Board
-from connect_four.board_helpers import (
+from connect_four.game.board import Board
+from connect_four.ai.board_helpers import (
     count_pieces,
     evaluate_window,
     get_all_windows,
     get_column_heights,
 )
-from connect_four.player import EMPTY, Player
+from connect_four.game.player import EMPTY, Player
 
 
 # ---------------------------------------------------------------------------

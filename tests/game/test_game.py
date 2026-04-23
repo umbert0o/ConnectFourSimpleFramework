@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from connect_four.board import Board
-from connect_four.game import Game
-from connect_four.player import EMPTY, Player
+from connect_four.game.board import Board
+from connect_four.game.game import Game
+from connect_four.game.player import EMPTY, Player
 
 
 @pytest.fixture
