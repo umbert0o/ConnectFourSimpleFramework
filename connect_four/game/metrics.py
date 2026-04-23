@@ -99,6 +99,7 @@ class MetricsTracker:
             mode=self.mode,
         )
         self._completed_games.append(result)
+        self._current_moves = []
         return result
 
     @property
