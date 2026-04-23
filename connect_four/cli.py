@@ -48,36 +48,25 @@ def _build_parser() -> argparse.ArgumentParser:
         description="Connect Four Framework — play or pit AIs against each other.",
     )
     parser.add_argument(
-        "--mode",
-        required=True,
-        choices=["human-vs-ai", "ai-vs-ai"],
-        help="Game mode to run.",
+        "--p1-ai",
+        default=None,
+        help="Dotted path to AI class for Player 1. If omitted, P1 is human-controlled.",
     )
     parser.add_argument(
-        "--ai",
-        default="connect_four.ai.random_ai.RandomAI",
-        help="Dotted path to AI class for human-vs-ai mode (default: connect_four.ai.random_ai.RandomAI).",
-    )
-    parser.add_argument(
-        "--ai1",
-        default="connect_four.ai.random_ai.RandomAI",
-        help="Dotted path to Player 1 AI class for ai-vs-ai mode (default: connect_four.ai.random_ai.RandomAI).",
-    )
-    parser.add_argument(
-        "--ai2",
-        default="connect_four.ai.random_ai.RandomAI",
-        help="Dotted path to Player 2 AI class for ai-vs-ai mode (default: connect_four.ai.random_ai.RandomAI).",
+        "--p2-ai",
+        default=None,
+        help="Dotted path to AI class for Player 2. If omitted, P2 is human-controlled.",
     )
     parser.add_argument(
         "--headless",
         action="store_true",
-        help="Run without visual display (ai-vs-ai mode only).",
+        help="Run without visual display (requires both --p1-ai and --p2-ai).",
     )
     parser.add_argument(
         "--games",
         type=int,
         default=1,
-        help="Number of games for headless ai-vs-ai (default: 1).",
+        help="Number of games for headless mode (default: 1).",
     )
     parser.add_argument(
         "--timeout",
@@ -92,34 +81,23 @@ def main() -> None:
     parser = _build_parser()
     args = parser.parse_args()
 
-    if args.mode == "human-vs-ai":
-        ai = _load_ai_class(args.ai)
-        game = Game()
-        # ai_player plays as PLAYER_2, human is always PLAYER_1
-        from connect_four.ui.game_controller import VisualGameController
-        from connect_four.ui.renderer import PygameRenderer
+    p1_ai = _load_ai_class(args.p1_ai) if args.p1_ai else None
+    p2_ai = _load_ai_class(args.p2_ai) if args.p2_ai else None
 
-        renderer = PygameRenderer(game)
-        controller = VisualGameController(
-            game, renderer, ai=ai, timeout_seconds=args.timeout
-        )
-        controller.run()
+    if args.headless:
+        if p1_ai is None or p2_ai is None:
+            parser.error("--headless requires both --p1-ai and --p2-ai.")
+        from connect_four.headless_runner import run_headless
 
-    elif args.mode == "ai-vs-ai":
-        ai1 = _load_ai_class(args.ai1)
-        ai2 = _load_ai_class(args.ai2)
+        run_headless(p1_ai, p2_ai, games=args.games)
+        return
 
-        if args.headless:
-            from connect_four.headless_runner import run_headless
+    game = Game()
+    from connect_four.ui.game_controller import VisualGameController
+    from connect_four.ui.renderer import PygameRenderer
 
-            run_headless(ai1, ai2, games=args.games)
-        else:
-            game = Game()
-            from connect_four.ui.game_controller import VisualGameController
-            from connect_four.ui.renderer import PygameRenderer
-
-            renderer = PygameRenderer(game)
-            controller = VisualGameController(
-                game, renderer, ai1=ai1, ai2=ai2, timeout_seconds=args.timeout
-            )
-            controller.run()
+    renderer = PygameRenderer(game)
+    controller = VisualGameController(
+        game, renderer, p1_ai=p1_ai, p2_ai=p2_ai, timeout_seconds=args.timeout
+    )
+    controller.run()

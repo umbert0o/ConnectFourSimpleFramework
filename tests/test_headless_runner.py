@@ -3,10 +3,10 @@
 import pytest
 
 from connect_four.ai.ai_base import AIBase
-from connect_four.game.board import Board
-from connect_four.headless_runner import run_headless
-from connect_four.game.player import Player
 from connect_four.ai.random_ai import RandomAI
+from connect_four.game.board import Board
+from connect_four.game.player import Player
+from connect_four.headless_runner import run_headless
 
 
 # ---------------------------------------------------------------------------
@@ -32,21 +32,21 @@ class BrokenAI(AIBase):
 
 class TestRunHeadlessStructure:
     def test_results_dict_keys(self) -> None:
-        ai1 = RandomAI()
-        ai2 = RandomAI()
-        results = run_headless(ai1, ai2, games=1)
+        p1_ai = RandomAI()
+        p2_ai = RandomAI()
+        results = run_headless(p1_ai, p2_ai, games=1)
         assert set(results.keys()) == {"player1_wins", "player2_wins", "draws"}
 
     def test_results_values_sum_to_games_count(self) -> None:
-        ai1 = RandomAI()
-        ai2 = RandomAI()
-        results = run_headless(ai1, ai2, games=1)
+        p1_ai = RandomAI()
+        p2_ai = RandomAI()
+        results = run_headless(p1_ai, p2_ai, games=1)
         assert results["player1_wins"] + results["player2_wins"] + results["draws"] == 1
 
     def test_results_values_are_non_negative(self) -> None:
-        ai1 = RandomAI()
-        ai2 = RandomAI()
-        results = run_headless(ai1, ai2, games=1)
+        p1_ai = RandomAI()
+        p2_ai = RandomAI()
+        results = run_headless(p1_ai, p2_ai, games=1)
         assert results["player1_wins"] >= 0
         assert results["player2_wins"] >= 0
         assert results["draws"] >= 0
@@ -59,16 +59,16 @@ class TestRunHeadlessStructure:
 
 class TestRunHeadlessInvalidMove:
     def test_broken_ai_raises_value_error(self) -> None:
-        ai1 = BrokenAI()
-        ai2 = RandomAI()
+        p1_ai = BrokenAI()
+        p2_ai = RandomAI()
         with pytest.raises(ValueError, match="returned invalid move -1"):
-            run_headless(ai1, ai2, games=1)
+            run_headless(p1_ai, p2_ai, games=1)
 
     def test_error_message_contains_ai_name(self) -> None:
-        ai1 = BrokenAI()
-        ai2 = RandomAI()
+        p1_ai = BrokenAI()
+        p2_ai = RandomAI()
         with pytest.raises(ValueError, match="BrokenAI"):
-            run_headless(ai1, ai2, games=1)
+            run_headless(p1_ai, p2_ai, games=1)
 
 
 # ---------------------------------------------------------------------------
@@ -78,9 +78,9 @@ class TestRunHeadlessInvalidMove:
 
 class TestRunHeadlessMultipleGames:
     def test_three_games_sum_to_three(self) -> None:
-        ai1 = RandomAI()
-        ai2 = RandomAI()
-        results = run_headless(ai1, ai2, games=3)
+        p1_ai = RandomAI()
+        p2_ai = RandomAI()
+        results = run_headless(p1_ai, p2_ai, games=3)
         total = results["player1_wins"] + results["player2_wins"] + results["draws"]
         assert total == 3
 
@@ -94,18 +94,18 @@ class TestRunHeadlessStdout:
     def test_single_game_prints_game_result(
         self, capsys: pytest.CaptureFixture[str]
     ) -> None:
-        ai1 = RandomAI()
-        ai2 = RandomAI()
-        run_headless(ai1, ai2, games=1)
+        p1_ai = RandomAI()
+        p2_ai = RandomAI()
+        run_headless(p1_ai, p2_ai, games=1)
         captured = capsys.readouterr()
         assert "Game 1:" in captured.out
         assert "RandomAI (P1)" in captured.out
         assert "RandomAI (P2)" in captured.out
 
     def test_prints_summary_line(self, capsys: pytest.CaptureFixture[str]) -> None:
-        ai1 = RandomAI()
-        ai2 = RandomAI()
-        run_headless(ai1, ai2, games=1)
+        p1_ai = RandomAI()
+        p2_ai = RandomAI()
+        run_headless(p1_ai, p2_ai, games=1)
         captured = capsys.readouterr()
         assert "Results after 1 games:" in captured.out
 
@@ -169,13 +169,6 @@ class TestFindWinningCellsVertical:
 
 class TestFindWinningCellsDiagonal:
     def _build_diagonal_down_right(self) -> Board:
-        """Diagonal win going down-right.
-
-        col 0: P1                row 5
-        col 1: P2, P1            rows 5, 4
-        col 2: P2, P2, P1        rows 5, 4, 3
-        col 3: P2, P2, P2, P1    rows 5, 4, 3, 2  <- P1 wins
-        """
         b = Board()
         b = b.drop_piece(0, Player.PLAYER_1)
         b = b.drop_piece(1, Player.PLAYER_2)
