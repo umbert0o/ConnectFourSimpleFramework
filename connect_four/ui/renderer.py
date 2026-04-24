@@ -74,6 +74,9 @@ class PygameRenderer:
         self._small_font = pygame.font.SysFont("Arial", 22)
         self._hover_col: int | None = None
         self._win_cells: list[tuple[int, int]] | None = None
+        self._show_dialog: bool = False
+        self._replay_btn_rect: pygame.Rect | None = None
+        self._exit_btn_rect: pygame.Rect | None = None
 
         from connect_four.ui.info_panel import InfoPanel
 
@@ -140,6 +143,10 @@ class PygameRenderer:
                 game_over=self._game.is_over,
             )
 
+        if self._show_dialog:
+            is_draw = self._game.is_over and self._game.winner is None
+            self.draw_replay_dialog(self._game.winner, is_draw)
+
         pygame.display.flip()
 
     def handle_events(self) -> tuple[str, int | None]:
@@ -177,3 +184,85 @@ class PygameRenderer:
 
     def set_tracker(self, tracker: MetricsTracker) -> None:
         self._tracker = tracker
+
+    def draw_replay_dialog(self, winner: Player | None, is_draw: bool) -> None:
+        overlay = pygame.Surface(
+            (self._board_width, self._board_height), pygame.SRCALPHA
+        )
+        overlay.fill((0, 0, 0, 180))
+        self._screen.blit(overlay, (0, HEADER_HEIGHT))
+
+        title_surf = self._font.render("GAME OVER", True, (255, 255, 255))
+        title_x = (self._board_width - title_surf.get_width()) // 2
+        title_y = HEADER_HEIGHT + self._board_height // 4
+        self._screen.blit(title_surf, (title_x, title_y))
+
+        if winner == Player.PLAYER_1:
+            result_text, result_color = "Player 1 Wins!", PLAYER1_COLOR
+        elif winner == Player.PLAYER_2:
+            result_text, result_color = "Player 2 Wins!", PLAYER2_COLOR
+        else:
+            result_text, result_color = "It's a Draw!", (255, 255, 255)
+
+        result_surf = self._font.render(result_text, True, result_color)
+        result_x = (self._board_width - result_surf.get_width()) // 2
+        result_y = title_y + 50
+        self._screen.blit(result_surf, (result_x, result_y))
+
+        btn_w, btn_h, gap = 180, 50, 20
+        total_w = btn_w * 2 + gap
+        block_left = (self._board_width - total_w) // 2
+        btn_y = HEADER_HEIGHT + self._board_height // 2
+
+        mouse_pos = pygame.mouse.get_pos()
+
+        replay_x = block_left
+        replay_bg = (60, 179, 113)
+        replay_rect = pygame.Rect(replay_x, btn_y, btn_w, btn_h)
+        if replay_rect.collidepoint(mouse_pos):
+            replay_bg = tuple(min(c + 30, 255) for c in replay_bg)
+        pygame.draw.rect(self._screen, replay_bg, replay_rect, border_radius=8)
+        replay_text = self._small_font.render("Play Again", True, (255, 255, 255))
+        self._screen.blit(
+            replay_text,
+            (
+                replay_x + (btn_w - replay_text.get_width()) // 2,
+                btn_y + (btn_h - replay_text.get_height()) // 2,
+            ),
+        )
+
+        exit_x = block_left + btn_w + gap
+        exit_bg = (120, 120, 120)
+        exit_rect = pygame.Rect(exit_x, btn_y, btn_w, btn_h)
+        if exit_rect.collidepoint(mouse_pos):
+            exit_bg = tuple(min(c + 30, 255) for c in exit_bg)
+        pygame.draw.rect(self._screen, exit_bg, exit_rect, border_radius=8)
+        exit_text = self._small_font.render("Exit", True, (255, 255, 255))
+        self._screen.blit(
+            exit_text,
+            (
+                exit_x + (btn_w - exit_text.get_width()) // 2,
+                btn_y + (btn_h - exit_text.get_height()) // 2,
+            ),
+        )
+
+        self._replay_btn_rect = replay_rect
+        self._exit_btn_rect = exit_rect
+
+    def handle_dialog_events(self) -> str | None:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return "exit"
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                return "exit"
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if self._replay_btn_rect and self._replay_btn_rect.collidepoint(
+                    event.pos
+                ):
+                    return "replay"
+                if self._exit_btn_rect and self._exit_btn_rect.collidepoint(event.pos):
+                    return "exit"
+        return None
+
+    def clear_highlight(self) -> None:
+        self._win_cells = None
