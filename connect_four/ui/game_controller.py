@@ -11,26 +11,11 @@ import time
 import pygame
 
 from connect_four.ai.ai_base import AIBase
-from connect_four.game.board import Board
 from connect_four.game.game import Game
 from connect_four.game.metrics import MetricsTracker
 from connect_four.game.player import Player
+from connect_four.game.validation import validate_ai_move
 from connect_four.ui.renderer import PygameRenderer
-
-
-def _validate_ai_move(ai: AIBase, board: Board, player: Player) -> int:
-    """Call *ai* and validate the returned column.
-
-    Returns the column on success.  Raises :class:`ValueError` when the AI
-    returns a column that is not in the board's current valid moves.
-    """
-    col = ai.choose_move(board, player)
-    if not board.is_valid_move(col):
-        raise ValueError(
-            f"AI {ai.name} returned invalid move {col} for player {player}. "
-            f"Valid moves: {board.get_valid_moves()}"
-        )
-    return col
 
 
 class VisualGameController:
@@ -98,7 +83,7 @@ class VisualGameController:
     def _setup_game(self) -> None:
         """Reset game state for a new game (or the first game)."""
         self._game.reset()
-        self._renderer._show_dialog = False
+        self._renderer.show_dialog = False
         self._renderer.clear_highlight()
         self._tracker = MetricsTracker(
             self._tracker.p1_name, self._tracker.p2_name, self._tracker.mode
@@ -119,7 +104,7 @@ class VisualGameController:
                     self._tracker.end_game(None)
                 if self._game.winner is not None:
                     self._renderer.highlight_win(self._game.board, self._game.winner)
-                self._renderer._show_dialog = True
+                self._renderer.show_dialog = True
                 self._renderer.render()
                 while True:
                     self._renderer.render()
@@ -167,12 +152,12 @@ class VisualGameController:
             old_handler = signal.signal(signal.SIGALRM, _handler)
             signal.alarm(int(self._timeout_seconds))
             try:
-                col = _validate_ai_move(active, self._game.board, current)
+                col = validate_ai_move(active, self._game.board, current)
             finally:
                 signal.alarm(0)
                 signal.signal(signal.SIGALRM, old_handler)
         else:
-            col = _validate_ai_move(active, self._game.board, current)
+            col = validate_ai_move(active, self._game.board, current)
 
         duration = time.perf_counter() - start
         self._game.make_move(col)

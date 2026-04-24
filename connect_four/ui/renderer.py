@@ -7,31 +7,21 @@ import pygame
 from connect_four.game.board import Board
 from connect_four.game.metrics import MetricsTracker
 from connect_four.game.player import EMPTY, Player
+from connect_four.ui.constants import (
+    BG_COLOR,
+    BOARD_COLOR,
+    EMPTY_COLOR,
+    HEADER_HEIGHT,
+    HIGHLIGHT_BORDER,
+    HOVER_COLOR,
+    PANEL_WIDTH,
+    PLAYER1_COLOR,
+    PLAYER2_COLOR,
+    _PLAYER_COLOR,
+)
 
 if TYPE_CHECKING:
     from connect_four.game.game import Game
-
-HEADER_HEIGHT = 80
-
-# Info panel (right side)
-PANEL_WIDTH = 280
-PANEL_PADDING = 15
-PANEL_BG_COLOR = (25, 25, 40)
-PANEL_BORDER_COLOR = (60, 60, 80)
-
-BG_COLOR = (30, 30, 30)
-BOARD_COLOR = (0, 70, 170)
-EMPTY_COLOR = (20, 20, 20)
-PLAYER1_COLOR = (220, 50, 50)
-PLAYER2_COLOR = (240, 220, 50)
-HOVER_COLOR = (200, 200, 200)
-
-_HIGHLIGHT_BORDER = (255, 255, 255)
-
-_PLAYER_COLOR: dict[int, tuple[int, int, int]] = {
-    Player.PLAYER_1: PLAYER1_COLOR,
-    Player.PLAYER_2: PLAYER2_COLOR,
-}
 
 
 def _compute_dimensions(
@@ -85,6 +75,14 @@ class PygameRenderer:
         )
         self._tracker: MetricsTracker | None = None
 
+    @property
+    def show_dialog(self) -> bool:
+        return self._show_dialog
+
+    @show_dialog.setter
+    def show_dialog(self, value: bool) -> None:
+        self._show_dialog = value
+
     def render(self) -> None:
         self._screen.fill(BG_COLOR)
 
@@ -110,7 +108,7 @@ class PygameRenderer:
                 cy = HEADER_HEIGHT + r * self._cell_size + self._cell_size // 2
                 pygame.draw.circle(
                     self._screen,
-                    _HIGHLIGHT_BORDER,
+                    HIGHLIGHT_BORDER,
                     (cx, cy),
                     self._cell_size // 2 - 6,
                     5,

@@ -10,10 +10,8 @@ from connect_four.ai.ai_base import AIBase
 from connect_four.game.board import Board
 from connect_four.game.game import Game
 from connect_four.game.player import EMPTY, Player
-from connect_four.ui.game_controller import (
-    VisualGameController,
-    _validate_ai_move,
-)
+from connect_four.game.validation import validate_ai_move
+from connect_four.ui.game_controller import VisualGameController
 from connect_four.ui.renderer import PygameRenderer
 
 
@@ -31,7 +29,7 @@ class TestValidateAIMove:
     def test_valid_move_passes(self):
         ai = _StubAI()
         board = Board()
-        col = _validate_ai_move(ai, board, Player.PLAYER_1)
+        col = validate_ai_move(ai, board, Player.PLAYER_1)
         assert col == 0
         assert board.is_valid_move(col)
 
@@ -39,19 +37,19 @@ class TestValidateAIMove:
         ai = _BrokenAI()
         board = Board()
         with pytest.raises(ValueError):
-            _validate_ai_move(ai, board, Player.PLAYER_1)
+            validate_ai_move(ai, board, Player.PLAYER_1)
 
     def test_invalid_move_message_contains_name(self):
         ai = _BrokenAI()
         board = Board()
         with pytest.raises(ValueError, match="BrokenAI"):
-            _validate_ai_move(ai, board, Player.PLAYER_1)
+            validate_ai_move(ai, board, Player.PLAYER_1)
 
     def test_invalid_move_message_contains_valid_moves(self):
         ai = _BrokenAI()
         board = Board()
         with pytest.raises(ValueError, match=r"Valid moves: \["):
-            _validate_ai_move(ai, board, Player.PLAYER_1)
+            validate_ai_move(ai, board, Player.PLAYER_1)
 
 
 def _make_controller(**kwargs):
@@ -184,9 +182,9 @@ class TestReplayFlow:
 
     def test_setup_game_resets_show_dialog(self):
         ctrl = _make_controller()
-        ctrl._renderer._show_dialog = True
+        ctrl._renderer.show_dialog = True
         ctrl._setup_game()
-        assert ctrl._renderer._show_dialog is False
+        assert ctrl._renderer.show_dialog is False
 
     def test_wait_for_exit_removed(self):
         assert not hasattr(VisualGameController, "_wait_for_exit")
