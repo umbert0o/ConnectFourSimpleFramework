@@ -1,8 +1,15 @@
 from __future__ import annotations
 
+import os
+
+import pygame
 import pytest
 
-from connect_four.ui.renderer import _compute_dimensions, HEADER_HEIGHT
+os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
+
+from connect_four.game.game import Game
+from connect_four.game.player import Player
+from connect_four.ui.renderer import HEADER_HEIGHT, PygameRenderer, _compute_dimensions
 
 
 class TestComputeDimensions:
@@ -73,3 +80,44 @@ class TestDrawStatusRemoved:
         from connect_four.ui.renderer import PygameRenderer
 
         assert not hasattr(PygameRenderer, "show_status")
+
+
+class TestReplayDialog:
+    def _make_renderer(self) -> PygameRenderer:
+        pygame.init()
+        game = Game()
+        return PygameRenderer(game, cell_size=80)
+
+    def test_show_dialog_flag_default_false(self) -> None:
+        renderer = self._make_renderer()
+        assert renderer._show_dialog is False
+        renderer.close()
+
+    def test_clear_highlight_resets_win_cells(self) -> None:
+        renderer = self._make_renderer()
+        renderer._win_cells = [(0, 0), (0, 1), (0, 2), (0, 3)]
+        renderer.clear_highlight()
+        assert renderer._win_cells is None
+        renderer.close()
+
+    def test_draw_replay_dialog_creates_button_rects(self) -> None:
+        renderer = self._make_renderer()
+        renderer.draw_replay_dialog(winner=Player.PLAYER_1, is_draw=False)
+        assert isinstance(renderer._replay_btn_rect, pygame.Rect)
+        assert isinstance(renderer._exit_btn_rect, pygame.Rect)
+        assert renderer._replay_btn_rect.width > 0
+        assert renderer._replay_btn_rect.height > 0
+        assert renderer._exit_btn_rect.width > 0
+        assert renderer._exit_btn_rect.height > 0
+        renderer.close()
+
+    def test_draw_replay_dialog_button_positions_within_board(self) -> None:
+        renderer = self._make_renderer()
+        renderer.draw_replay_dialog(winner=Player.PLAYER_2, is_draw=False)
+        board_width = renderer._board_width  # 7 * 80 = 560
+        for rect in (renderer._replay_btn_rect, renderer._exit_btn_rect):
+            assert rect is not None
+            assert rect.x >= 0
+            assert rect.right <= board_width
+            assert rect.y > HEADER_HEIGHT
+        renderer.close()

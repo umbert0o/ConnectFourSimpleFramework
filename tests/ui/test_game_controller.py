@@ -9,7 +9,7 @@ import pytest
 from connect_four.ai.ai_base import AIBase
 from connect_four.game.board import Board
 from connect_four.game.game import Game
-from connect_four.game.player import Player
+from connect_four.game.player import EMPTY, Player
 from connect_four.ui.game_controller import (
     VisualGameController,
     _validate_ai_move,
@@ -139,3 +139,54 @@ class TestTimeout:
     def test_timeout_default_is_none(self):
         ctrl = _make_controller()
         assert ctrl._timeout_seconds is None
+
+
+class TestReplayFlow:
+    def test_setup_game_resets_state(self):
+        ctrl = _make_controller()
+        for _ in range(3):
+            ctrl._game.make_move(0)
+            ctrl._game.make_move(1)
+        assert ctrl._game.board.get_cell(5, 0) is not None
+        ctrl._game._is_over = True
+        ctrl._game._winner = Player.PLAYER_1
+        ctrl._game._current_player = Player.PLAYER_2
+
+        ctrl._setup_game()
+
+        assert ctrl._game.is_over is False
+        assert ctrl._game.winner is None
+        assert ctrl._game.current_player == Player.PLAYER_1
+        assert ctrl._game.board.get_cell(5, 0) == EMPTY
+
+    def test_setup_game_creates_new_tracker(self):
+        ctrl = _make_controller()
+        old_id = id(ctrl._tracker)
+        ctrl._setup_game()
+        assert id(ctrl._tracker) != old_id
+
+    def test_setup_game_preserves_player_names(self):
+        ctrl = _make_controller(p2_ai=_StubAI())
+        old_p1 = ctrl._tracker.p1_name
+        old_p2 = ctrl._tracker.p2_name
+        old_mode = ctrl._tracker.mode
+
+        ctrl._setup_game()
+
+        assert ctrl._tracker.p1_name == old_p1
+        assert ctrl._tracker.p2_name == old_p2
+        assert ctrl._tracker.mode == old_mode
+
+    def test_setup_game_clears_highlight(self):
+        ctrl = _make_controller()
+        ctrl._setup_game()
+        assert ctrl._renderer.clear_highlight.called
+
+    def test_setup_game_resets_show_dialog(self):
+        ctrl = _make_controller()
+        ctrl._renderer._show_dialog = True
+        ctrl._setup_game()
+        assert ctrl._renderer._show_dialog is False
+
+    def test_wait_for_exit_removed(self):
+        assert not hasattr(VisualGameController, "_wait_for_exit")
