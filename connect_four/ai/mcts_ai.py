@@ -25,6 +25,9 @@ class _MCTSNode:
         return exploitation + exploration
     
 class MctsAI(AIBase):
+    def __init__(self, iterations: int = 1000):
+        self._iterations = iterations
+    
     def choose_move(self, board: Board, player: Player) -> int:
         return 1
     
