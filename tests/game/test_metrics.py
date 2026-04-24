@@ -6,7 +6,12 @@ import tempfile
 
 import pytest
 
-from connect_four.game.metrics import GameResult, MetricsTracker, MoveRecord
+from connect_four.game.metrics import (
+    GameResult,
+    MetricsTracker,
+    MoveRecord,
+    ResourceUsage,
+)
 from connect_four.game.player import Player
 
 
@@ -202,3 +207,176 @@ class TestGetSummary:
         assert summary["player1_wins"] == 1
         assert summary["player2_wins"] == 1
         assert summary["draws"] == 1
+
+
+class TestResourceUsage:
+    def test_fields_populated_correctly(self):
+        ru = ResourceUsage(wall_time=1.5, peak_ram_bytes=4096)
+        assert ru.wall_time == 1.5
+        assert ru.peak_ram_bytes == 4096
+
+    def test_zero_values(self):
+        ru = ResourceUsage(wall_time=0.0, peak_ram_bytes=0)
+        assert ru.wall_time == 0.0
+        assert ru.peak_ram_bytes == 0
+
+    def test_negative_wall_time_allowed(self):
+        ru = ResourceUsage(wall_time=-0.1, peak_ram_bytes=0)
+        assert ru.wall_time == -0.1
+
+
+class TestGameResultResources:
+    def test_resources_defaults_to_none(self):
+        result = GameResult(
+            game_number=1,
+            winner=Player.PLAYER_1,
+            total_moves=1,
+            duration=1.0,
+            moves=[],
+            p1_name="A",
+            p2_name="B",
+            mode="ai_vs_ai",
+        )
+        assert result.resources is None
+
+    def test_resources_set_to_dict(self):
+        ru = ResourceUsage(wall_time=0.5, peak_ram_bytes=1024)
+        result = GameResult(
+            game_number=1,
+            winner=Player.PLAYER_1,
+            total_moves=1,
+            duration=1.0,
+            moves=[],
+            p1_name="A",
+            p2_name="B",
+            mode="ai_vs_ai",
+            resources={"player1": ru},
+        )
+        assert result.resources is not None
+        assert result.resources["player1"].wall_time == 0.5
+
+    def test_resources_with_both_players(self):
+        result = GameResult(
+            game_number=1,
+            winner=Player.PLAYER_1,
+            total_moves=1,
+            duration=1.0,
+            moves=[],
+            p1_name="A",
+            p2_name="B",
+            mode="ai_vs_ai",
+            resources={
+                "player1": ResourceUsage(wall_time=1.0, peak_ram_bytes=2048),
+                "player2": ResourceUsage(wall_time=0.5, peak_ram_bytes=1024),
+            },
+        )
+        assert result.resources is not None
+        assert result.resources["player1"].wall_time == 1.0
+        assert result.resources["player2"].peak_ram_bytes == 1024
+
+
+class TestEndGameWithResources:
+    def test_end_game_without_resources(self):
+        tracker = MetricsTracker("P1", "P2", "ai_vs_ai")
+        tracker.start_game()
+        tracker.record_move(Player.PLAYER_1, 3, duration=None, is_ai=False)
+        result = tracker.end_game(Player.PLAYER_1)
+        assert result.resources is None
+
+    def test_end_game_with_resources(self):
+        tracker = MetricsTracker("P1", "P2", "ai_vs_ai")
+        tracker.start_game()
+        tracker.record_move(Player.PLAYER_1, 3, duration=None, is_ai=False)
+        result = tracker.end_game(
+            Player.PLAYER_1,
+            resources={"player1": ResourceUsage(wall_time=0.5, peak_ram_bytes=1024)},
+        )
+        assert result.resources is not None
+        assert result.resources["player1"].wall_time == 0.5
+
+    def test_end_game_with_both_player_resources(self):
+        tracker = MetricsTracker("P1", "P2", "ai_vs_ai")
+        tracker.start_game()
+        tracker.record_move(Player.PLAYER_1, 0, duration=0.1, is_ai=True)
+        tracker.record_move(Player.PLAYER_2, 1, duration=0.2, is_ai=True)
+        result = tracker.end_game(
+            Player.PLAYER_1,
+            resources={
+                "player1": ResourceUsage(wall_time=1.0, peak_ram_bytes=2048),
+                "player2": ResourceUsage(wall_time=0.5, peak_ram_bytes=1024),
+            },
+        )
+        assert result.resources is not None
+        assert result.resources["player1"].wall_time == 1.0
+        assert result.resources["player2"].peak_ram_bytes == 1024
+
+
+class TestJsonExportWithResources:
+    def test_json_includes_resources_key(self):
+        tracker = MetricsTracker("A", "B", "ai_vs_ai")
+        tracker.start_game()
+        tracker.record_move(Player.PLAYER_1, 0, duration=0.1, is_ai=True)
+        tracker.end_game(
+            Player.PLAYER_1,
+            resources={"player1": ResourceUsage(wall_time=0.5, peak_ram_bytes=1024)},
+        )
+        data = json.loads(tracker.to_json())
+        assert "resources" in data["games"][0]
+
+    def test_json_resources_has_player_keys(self):
+        tracker = MetricsTracker("A", "B", "ai_vs_ai")
+        tracker.start_game()
+        tracker.record_move(Player.PLAYER_1, 0, duration=0.1, is_ai=True)
+        tracker.end_game(
+            Player.PLAYER_1,
+            resources={
+                "player1": ResourceUsage(wall_time=1.0, peak_ram_bytes=2048),
+                "player2": ResourceUsage(wall_time=0.5, peak_ram_bytes=1024),
+            },
+        )
+        data = json.loads(tracker.to_json())
+        assert "player1" in data["games"][0]["resources"]
+        assert "player2" in data["games"][0]["resources"]
+
+    def test_json_resources_values_correct(self):
+        tracker = MetricsTracker("A", "B", "ai_vs_ai")
+        tracker.start_game()
+        tracker.record_move(Player.PLAYER_1, 0, duration=0.1, is_ai=True)
+        tracker.end_game(
+            Player.PLAYER_1,
+            resources={"player1": ResourceUsage(wall_time=0.5, peak_ram_bytes=1024)},
+        )
+        data = json.loads(tracker.to_json())
+        p1 = data["games"][0]["resources"]["player1"]
+        assert isinstance(p1["wall_time"], (int, float))
+        assert isinstance(p1["peak_ram_bytes"], int)
+
+
+class TestJsonExportWithoutResources:
+    def test_json_shows_null_resources(self):
+        tracker = MetricsTracker("A", "B", "ai_vs_ai")
+        tracker.start_game()
+        tracker.record_move(Player.PLAYER_1, 0, duration=0.1, is_ai=True)
+        tracker.end_game(Player.PLAYER_1)
+        data = json.loads(tracker.to_json())
+        assert data["games"][0]["resources"] is None
+
+
+class TestBackwardCompatibility:
+    def test_existing_end_game_still_works(self):
+        tracker = MetricsTracker("P1", "P2", "ai_vs_ai")
+        tracker.start_game()
+        tracker.record_move(Player.PLAYER_1, 3, duration=None, is_ai=False)
+        result = tracker.end_game(Player.PLAYER_1)
+        assert len(tracker.completed_games) == 1
+        assert len(tracker.current_game_moves) == 0
+        assert result.winner == Player.PLAYER_1
+
+    def test_existing_json_export_still_works(self):
+        tracker = MetricsTracker("A", "B", "ai_vs_ai")
+        tracker.start_game()
+        tracker.record_move(Player.PLAYER_1, 0, duration=0.1, is_ai=True)
+        tracker.end_game(Player.PLAYER_1)
+        data = json.loads(tracker.to_json())
+        assert "games" in data
+        assert "summary" in data

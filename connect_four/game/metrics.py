@@ -21,6 +21,14 @@ class MoveRecord:
 
 
 @dataclass
+class ResourceUsage:
+    """Per-algorithm resource usage for a single game."""
+
+    wall_time: float  # Sum of per-move wall-clock durations (seconds)
+    peak_ram_bytes: int  # Maximum tracemalloc delta across all moves (bytes)
+
+
+@dataclass
 class GameResult:
     """Result of a single game."""
 
@@ -32,6 +40,9 @@ class GameResult:
     p1_name: str
     p2_name: str
     mode: str  # "human_vs_human", "human_vs_ai", "ai_vs_ai"
+    resources: dict[str, ResourceUsage] | None = (
+        None  # Per-algorithm resources for this game
+    )
 
 
 class MetricsTracker:
@@ -73,7 +84,12 @@ class MetricsTracker:
         )
         self._current_moves.append(move)
 
-    def end_game(self, winner: int | None) -> GameResult:
+    def end_game(
+        self,
+        winner: int | None,
+        *,
+        resources: dict[str, ResourceUsage] | None = None,
+    ) -> GameResult:
         result = GameResult(
             game_number=len(self._completed_games) + 1,
             winner=winner,
@@ -83,6 +99,7 @@ class MetricsTracker:
             p1_name=self.p1_name,
             p2_name=self.p2_name,
             mode=self.mode,
+            resources=resources,
         )
         self._completed_games.append(result)
         self._current_moves = []
