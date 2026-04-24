@@ -61,3 +61,15 @@ class TestOldConstantsRemoved:
 
         assert hasattr(mod, "HEADER_HEIGHT")
         assert mod.HEADER_HEIGHT == 80
+
+
+class TestDrawStatusRemoved:
+    def test_no_draw_status_method(self) -> None:
+        from connect_four.ui.renderer import PygameRenderer
+
+        assert not hasattr(PygameRenderer, "_draw_status")
+
+    def test_no_show_status_method(self) -> None:
+        from connect_four.ui.renderer import PygameRenderer
+
+        assert not hasattr(PygameRenderer, "show_status")

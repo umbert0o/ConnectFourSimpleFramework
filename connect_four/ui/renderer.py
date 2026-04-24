@@ -85,8 +85,6 @@ class PygameRenderer:
     def render(self) -> None:
         self._screen.fill(BG_COLOR)
 
-        self._draw_status(self._game.get_status())
-
         board_rect = pygame.Rect(
             0, HEADER_HEIGHT, self._board_width, self._board_height
         )
@@ -174,24 +172,8 @@ class PygameRenderer:
     def highlight_win(self, board: Board, winner: Player) -> None:
         self._win_cells = board.get_winning_cells()
 
-    def show_status(self, text: str) -> None:
-        self._screen.fill(BG_COLOR)
-        self._draw_status(text)
-        pygame.display.flip()
-
     def close(self) -> None:
         pygame.quit()
 
     def set_tracker(self, tracker: MetricsTracker) -> None:
         self._tracker = tracker
-
-    def _draw_status(self, text: str) -> None:
-        colour = (
-            _PLAYER_COLOR[self._game.current_player]
-            if not self._game.is_over and self._game.winner is None
-            else (255, 255, 255)
-        )
-        surface = self._font.render(text, True, colour)
-        x = (self._board_width - surface.get_width()) // 2
-        y = (HEADER_HEIGHT - surface.get_height()) // 2
-        self._screen.blit(surface, (x, y))
