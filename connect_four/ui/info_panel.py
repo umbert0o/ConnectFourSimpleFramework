@@ -76,7 +76,6 @@ class InfoPanel:
         y += p2_label.get_height() + 12
 
         if game_over:
-            y = self._draw_section_title(surface, "Game Over", y, x_offset)
             if tracker.completed_games:
                 winner_val = tracker.completed_games[-1].winner
                 winner_text = (

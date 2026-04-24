@@ -154,3 +154,71 @@ class TestDividerXOffset:
         surface = MagicMock(spec=pygame.Surface)
         result_y = self.panel._draw_divider(surface, 200, 700)
         assert result_y == 200 + 8
+
+
+class TestGameOverTitleRemoved:
+    def setup_method(self):
+        pygame.init()
+        self.screen = pygame.display.set_mode((980, 680))
+        self.font = pygame.font.SysFont("Arial", 22)
+        self.small_font = pygame.font.SysFont("Arial", 18)
+        self.panel = InfoPanel(280, 600, self.font, self.small_font)
+        self.tracker = MetricsTracker("Alice", "Bob", "ai_vs_ai")
+
+    def test_no_game_over_title_with_winner(self):
+        self.tracker.start_game()
+        self.tracker.record_move(Player.PLAYER_1, 3, duration=0.5, is_ai=True)
+        self.tracker.end_game(Player.PLAYER_1)
+
+        with patch.object(
+            self.panel, "_draw_section_title", wraps=self.panel._draw_section_title
+        ) as mock_title:
+            self.panel.draw(
+                self.screen, 700, self.tracker, Player.PLAYER_1, game_over=True
+            )
+            for c in mock_title.call_args_list:
+                assert c[0][1] != "Game Over"
+
+    def test_no_game_over_title_with_draw(self):
+        self.tracker.start_game()
+        self.panel.draw(self.screen, 700, self.tracker, Player.PLAYER_1, game_over=True)
+
+        with patch.object(
+            self.panel, "_draw_section_title", wraps=self.panel._draw_section_title
+        ) as mock_title:
+            self.panel.draw(
+                self.screen, 700, self.tracker, Player.PLAYER_1, game_over=True
+            )
+            for c in mock_title.call_args_list:
+                assert c[0][1] != "Game Over"
+
+    @patch("connect_four.ui.info_panel.pygame.draw.line")
+    def test_winner_text_still_rendered(self, _mock_line):
+        self.tracker.start_game()
+        self.tracker.record_move(Player.PLAYER_1, 3, duration=0.5, is_ai=True)
+        self.tracker.end_game(Player.PLAYER_1)
+
+        surface = MagicMock(spec=pygame.Surface)
+        with patch.object(self.panel, "_font") as mock_font:
+            rendered = MagicMock()
+            rendered.get_height.return_value = 20
+            mock_font.render = MagicMock(return_value=rendered)
+            self.panel.draw(surface, 700, self.tracker, Player.PLAYER_1, game_over=True)
+            render_calls = mock_font.render.call_args_list
+            texts = [c[0][0] for c in render_calls]
+            assert any("Winner: P1" in t for t in texts)
+
+    @patch("connect_four.ui.info_panel.pygame.draw.line")
+    def test_draw_text_rendered_when_no_winner(self, _mock_line):
+        self.tracker.start_game()
+        self.tracker.end_game(None)
+
+        surface = MagicMock(spec=pygame.Surface)
+        with patch.object(self.panel, "_font") as mock_font:
+            rendered = MagicMock()
+            rendered.get_height.return_value = 20
+            mock_font.render = MagicMock(return_value=rendered)
+            self.panel.draw(surface, 700, self.tracker, Player.PLAYER_1, game_over=True)
+            render_calls = mock_font.render.call_args_list
+            texts = [c[0][0] for c in render_calls]
+            assert any("Draw" in t for t in texts)
