@@ -125,6 +125,3 @@ class Board:
         lines.append("-" * (self._cols * 2 - 1))
         lines.append(" ".join(str(c) for c in range(self._cols)))
         return "\n".join(lines)
-
-    def __repr__(self) -> str:
-        return f"Board(rows={self._rows}, cols={self._cols})"

@@ -4,11 +4,7 @@ from __future__ import annotations
 
 import json
 import time
-from dataclasses import asdict, dataclass, field
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from connect_four.game.player import Player
+from dataclasses import asdict, dataclass
 
 
 @dataclass
@@ -36,16 +32,6 @@ class GameResult:
     p1_name: str
     p2_name: str
     mode: str  # "human_vs_human", "human_vs_ai", "ai_vs_ai"
-
-
-@dataclass
-class TournamentResult:
-    """Result of a tournament (multiple games)."""
-
-    games: list[GameResult] = field(default_factory=list)
-    summary: dict[str, int] = field(default_factory=dict)
-    p1_name: str = ""
-    p2_name: str = ""
 
 
 class MetricsTracker:
@@ -109,18 +95,6 @@ class MetricsTracker:
     @property
     def completed_games(self) -> list[GameResult]:
         return list(self._completed_games)
-
-    def get_current_game_result(self, winner: int | None) -> GameResult:
-        return GameResult(
-            game_number=len(self._completed_games) + 1,
-            winner=winner,
-            total_moves=len(self._current_moves),
-            duration=time.perf_counter() - self._game_start_time,
-            moves=list(self._current_moves),
-            p1_name=self.p1_name,
-            p2_name=self.p2_name,
-            mode=self.mode,
-        )
 
     def get_summary(self) -> dict[str, int]:
         p1_wins = sum(1 for g in self._completed_games if g.winner == 1)
