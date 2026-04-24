@@ -6,7 +6,7 @@ import pygame
 
 from connect_four.game.metrics import MoveRecord, MetricsTracker
 from connect_four.game.player import Player
-from connect_four.ui.renderer import (
+from connect_four.ui.constants import (
     PANEL_BG_COLOR,
     PANEL_BORDER_COLOR,
     PANEL_PADDING,

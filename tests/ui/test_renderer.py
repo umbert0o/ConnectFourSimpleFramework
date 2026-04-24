@@ -9,7 +9,8 @@ os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 
 from connect_four.game.game import Game
 from connect_four.game.player import Player
-from connect_four.ui.renderer import HEADER_HEIGHT, PygameRenderer, _compute_dimensions
+from connect_four.ui.constants import HEADER_HEIGHT
+from connect_four.ui.renderer import PygameRenderer, _compute_dimensions
 
 
 class TestComputeDimensions:

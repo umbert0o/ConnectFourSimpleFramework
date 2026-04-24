@@ -8,7 +8,8 @@ import pytest
 from connect_four.game.metrics import MetricsTracker
 from connect_four.game.player import Player
 from connect_four.ui.info_panel import InfoPanel
-from connect_four.ui.renderer import PANEL_PADDING, PANEL_WIDTH, PygameRenderer
+from connect_four.ui.constants import PANEL_PADDING, PANEL_WIDTH
+from connect_four.ui.renderer import PygameRenderer
 
 
 class TestInfoPanelInit:
