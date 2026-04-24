@@ -118,20 +118,12 @@ class TestRunHeadlessStdout:
 
 
 class TestFindWinningCellsHorizontal:
-    def _build_horizontal_win(self) -> Board:
-        b = Board()
-        for c in range(4):
-            b = b.drop_piece(c, Player.PLAYER_1)
-        return b
-
-    def test_returns_four_cells(self) -> None:
-        board = self._build_horizontal_win()
-        cells = board.get_winning_cells()
+    def test_returns_four_cells(self, board_with_row_of_4: Board) -> None:
+        cells = board_with_row_of_4.get_winning_cells()
         assert len(cells) == 4
 
-    def test_cells_are_on_bottom_row(self) -> None:
-        board = self._build_horizontal_win()
-        cells = board.get_winning_cells()
+    def test_cells_are_on_bottom_row(self, board_with_row_of_4: Board) -> None:
+        cells = board_with_row_of_4.get_winning_cells()
         rows = {r for r, _ in cells}
         assert rows == {5}
         cols = {c for _, c in cells}
@@ -144,20 +136,12 @@ class TestFindWinningCellsHorizontal:
 
 
 class TestFindWinningCellsVertical:
-    def _build_vertical_win(self) -> Board:
-        b = Board()
-        for _ in range(4):
-            b = b.drop_piece(3, Player.PLAYER_1)
-        return b
-
-    def test_returns_four_cells(self) -> None:
-        board = self._build_vertical_win()
-        cells = board.get_winning_cells()
+    def test_returns_four_cells(self, board_vertical_win: Board) -> None:
+        cells = board_vertical_win.get_winning_cells()
         assert len(cells) == 4
 
-    def test_cells_are_in_same_column(self) -> None:
-        board = self._build_vertical_win()
-        cells = board.get_winning_cells()
+    def test_cells_are_in_same_column(self, board_vertical_win: Board) -> None:
+        cells = board_vertical_win.get_winning_cells()
         cols = {c for _, c in cells}
         assert cols == {3}
         rows = {r for r, _ in cells}
@@ -170,28 +154,12 @@ class TestFindWinningCellsVertical:
 
 
 class TestFindWinningCellsDiagonal:
-    def _build_diagonal_down_right(self) -> Board:
-        b = Board()
-        b = b.drop_piece(0, Player.PLAYER_1)
-        b = b.drop_piece(1, Player.PLAYER_2)
-        b = b.drop_piece(1, Player.PLAYER_1)
-        b = b.drop_piece(2, Player.PLAYER_2)
-        b = b.drop_piece(2, Player.PLAYER_2)
-        b = b.drop_piece(2, Player.PLAYER_1)
-        b = b.drop_piece(3, Player.PLAYER_2)
-        b = b.drop_piece(3, Player.PLAYER_2)
-        b = b.drop_piece(3, Player.PLAYER_2)
-        b = b.drop_piece(3, Player.PLAYER_1)
-        return b
-
-    def test_returns_four_cells(self) -> None:
-        board = self._build_diagonal_down_right()
-        cells = board.get_winning_cells()
+    def test_returns_four_cells(self, board_diagonal_down_right: Board) -> None:
+        cells = board_diagonal_down_right.get_winning_cells()
         assert len(cells) == 4
 
-    def test_cells_form_diagonal(self) -> None:
-        board = self._build_diagonal_down_right()
-        cells = board.get_winning_cells()
+    def test_cells_form_diagonal(self, board_diagonal_down_right: Board) -> None:
+        cells = board_diagonal_down_right.get_winning_cells()
         assert len(cells) == 4
         cell_set = set(cells)
         assert cell_set == {(2, 3), (3, 2), (4, 1), (5, 0)}
@@ -203,9 +171,8 @@ class TestFindWinningCellsDiagonal:
 
 
 class TestFindWinningCellsNoWin:
-    def test_empty_board_returns_empty_list(self) -> None:
-        board = Board()
-        cells = board.get_winning_cells()
+    def test_empty_board_returns_empty_list(self, empty_board: Board) -> None:
+        cells = empty_board.get_winning_cells()
         assert cells == []
 
     def test_partial_board_no_win_returns_empty_list(self) -> None:

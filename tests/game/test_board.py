@@ -7,28 +7,6 @@ from connect_four.game.player import EMPTY, Player
 
 
 # ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
-
-
-@pytest.fixture
-def empty_board() -> Board:
-    """Standard 6x7 empty board."""
-    return Board()
-
-
-@pytest.fixture
-def board_with_row_of_4() -> Board:
-    """Board with PLAYER_1 having a horizontal win on the bottom row."""
-    b = Board()
-    b = b.drop_piece(0, Player.PLAYER_1)
-    b = b.drop_piece(1, Player.PLAYER_1)
-    b = b.drop_piece(2, Player.PLAYER_1)
-    b = b.drop_piece(3, Player.PLAYER_1)
-    return b
-
-
-# ---------------------------------------------------------------------------
 # 1. Creation
 # ---------------------------------------------------------------------------
 
@@ -152,77 +130,17 @@ class TestGetValidMoves:
 
 
 class TestCheckWinner:
-    def _build_horizontal_win(self) -> Board:
-        b = Board()
-        for c in range(4):
-            b = b.drop_piece(c, Player.PLAYER_1)
-        return b
+    def test_horizontal_win(self, board_with_row_of_4: Board) -> None:
+        assert board_with_row_of_4.check_winner() == Player.PLAYER_1
 
-    def _build_vertical_win(self) -> Board:
-        b = Board()
-        for _ in range(4):
-            b = b.drop_piece(3, Player.PLAYER_1)
-        return b
+    def test_vertical_win(self, board_vertical_win: Board) -> None:
+        assert board_vertical_win.check_winner() == Player.PLAYER_1
 
-    def _build_diagonal_down_right(self) -> Board:
-        """Build a diagonal win going down-right (dr=1, dc=1).
+    def test_diagonal_down_right(self, board_diagonal_down_right: Board) -> None:
+        assert board_diagonal_down_right.check_winner() == Player.PLAYER_1
 
-        Layout (bottom-up stacking in columns 0-3):
-          col 0: P1                     row 5
-          col 1: P2, P1                 rows 5, 4
-          col 2: P2, P2, P1             rows 5, 4, 3
-          col 3: P2, P2, P2, P1         rows 5, 4, 3, 2  ← P1 wins here
-        """
-        b = Board()
-        b = b.drop_piece(0, Player.PLAYER_1)
-        b = b.drop_piece(1, Player.PLAYER_2)
-        b = b.drop_piece(1, Player.PLAYER_1)
-        b = b.drop_piece(2, Player.PLAYER_2)
-        b = b.drop_piece(2, Player.PLAYER_2)
-        b = b.drop_piece(2, Player.PLAYER_1)
-        b = b.drop_piece(3, Player.PLAYER_2)
-        b = b.drop_piece(3, Player.PLAYER_2)
-        b = b.drop_piece(3, Player.PLAYER_2)
-        b = b.drop_piece(3, Player.PLAYER_1)
-        return b
-
-    def _build_diagonal_down_left(self) -> Board:
-        """Build a diagonal win going down-left (dr=1, dc=-1).
-
-        Layout (bottom-up stacking in columns 3-6):
-          col 6: P1                     row 5
-          col 5: P2, P1                 rows 5, 4
-          col 4: P2, P2, P1             rows 5, 4, 3
-          col 3: P2, P2, P2, P1         rows 5, 4, 3, 2  ← P1 wins here
-        """
-        b = Board()
-        b = b.drop_piece(6, Player.PLAYER_1)
-        b = b.drop_piece(5, Player.PLAYER_2)
-        b = b.drop_piece(5, Player.PLAYER_1)
-        b = b.drop_piece(4, Player.PLAYER_2)
-        b = b.drop_piece(4, Player.PLAYER_2)
-        b = b.drop_piece(4, Player.PLAYER_1)
-        b = b.drop_piece(3, Player.PLAYER_2)
-        b = b.drop_piece(3, Player.PLAYER_2)
-        b = b.drop_piece(3, Player.PLAYER_2)
-        b = b.drop_piece(3, Player.PLAYER_1)
-        return b
-
-    def test_horizontal_win(self) -> None:
-        b = self._build_horizontal_win()
-        assert b.check_winner() == Player.PLAYER_1
-
-    def test_vertical_win(self) -> None:
-        b = self._build_vertical_win()
-        assert b.check_winner() == Player.PLAYER_1
-
-    def test_diagonal_down_right(self) -> None:
-        b = self._build_diagonal_down_right()
-        assert b.check_winner() == Player.PLAYER_1
-
-    def test_diagonal_down_left(self) -> None:
-        b = self._build_diagonal_down_left()
-        assert b.check_winner() == Player.PLAYER_1
+    def test_diagonal_down_left(self, board_diagonal_down_left: Board) -> None:
+        assert board_diagonal_down_left.check_winner() == Player.PLAYER_1
 
     def test_no_winner_on_empty_board(self, empty_board: Board) -> None:
         assert empty_board.check_winner() is None
@@ -234,10 +152,9 @@ class TestCheckWinner:
         b = b.drop_piece(2, Player.PLAYER_1)
         assert b.check_winner() is None
 
-    def test_winner_returns_player_number(self) -> None:
+    def test_winner_returns_player_number(self, board_with_row_of_4: Board) -> None:
         """check_winner returns int 1 or 2, matching Player values."""
-        b1 = self._build_horizontal_win()
-        result = b1.check_winner()
+        result = board_with_row_of_4.check_winner()
         assert result in (1, 2)
         assert result == Player.PLAYER_1
 
@@ -247,9 +164,8 @@ class TestCheckWinner:
             b = b.drop_piece(c, Player.PLAYER_2)
         assert b.check_winner() == Player.PLAYER_2
 
-    def test_check_winner_returns_player_type(self) -> None:
-        b = self._build_horizontal_win()
-        winner = b.check_winner()
+    def test_check_winner_returns_player_type(self, board_with_row_of_4: Board) -> None:
+        winner = board_with_row_of_4.check_winner()
         assert winner is not None
         assert type(winner) is Player
 
@@ -358,67 +274,27 @@ class TestColumnBoundary:
 
 
 class TestGetWinningCells:
-    def _build_horizontal_win(self) -> Board:
-        b = Board()
-        for c in range(4):
-            b = b.drop_piece(c, Player.PLAYER_1)
-        return b
-
-    def _build_vertical_win(self) -> Board:
-        b = Board()
-        for _ in range(4):
-            b = b.drop_piece(3, Player.PLAYER_1)
-        return b
-
-    def _build_diagonal_down_right(self) -> Board:
-        b = Board()
-        b = b.drop_piece(0, Player.PLAYER_1)
-        b = b.drop_piece(1, Player.PLAYER_2)
-        b = b.drop_piece(1, Player.PLAYER_1)
-        b = b.drop_piece(2, Player.PLAYER_2)
-        b = b.drop_piece(2, Player.PLAYER_2)
-        b = b.drop_piece(2, Player.PLAYER_1)
-        b = b.drop_piece(3, Player.PLAYER_2)
-        b = b.drop_piece(3, Player.PLAYER_2)
-        b = b.drop_piece(3, Player.PLAYER_2)
-        b = b.drop_piece(3, Player.PLAYER_1)
-        return b
-
-    def _build_diagonal_down_left(self) -> Board:
-        b = Board()
-        b = b.drop_piece(6, Player.PLAYER_1)
-        b = b.drop_piece(5, Player.PLAYER_2)
-        b = b.drop_piece(5, Player.PLAYER_1)
-        b = b.drop_piece(4, Player.PLAYER_2)
-        b = b.drop_piece(4, Player.PLAYER_2)
-        b = b.drop_piece(4, Player.PLAYER_1)
-        b = b.drop_piece(3, Player.PLAYER_2)
-        b = b.drop_piece(3, Player.PLAYER_2)
-        b = b.drop_piece(3, Player.PLAYER_2)
-        b = b.drop_piece(3, Player.PLAYER_1)
-        return b
-
-    def test_horizontal_win_returns_4_cells(self) -> None:
-        b = self._build_horizontal_win()
-        cells = b.get_winning_cells()
+    def test_horizontal_win_returns_4_cells(self, board_with_row_of_4: Board) -> None:
+        cells = board_with_row_of_4.get_winning_cells()
         assert len(cells) == 4
         assert cells == [(5, 0), (5, 1), (5, 2), (5, 3)]
 
-    def test_vertical_win_returns_4_cells(self) -> None:
-        b = self._build_vertical_win()
-        cells = b.get_winning_cells()
+    def test_vertical_win_returns_4_cells(self, board_vertical_win: Board) -> None:
+        cells = board_vertical_win.get_winning_cells()
         assert len(cells) == 4
         assert cells == [(2, 3), (3, 3), (4, 3), (5, 3)]
 
-    def test_diagonal_down_right_returns_4_cells(self) -> None:
-        b = self._build_diagonal_down_right()
-        cells = b.get_winning_cells()
+    def test_diagonal_down_right_returns_4_cells(
+        self, board_diagonal_down_right: Board
+    ) -> None:
+        cells = board_diagonal_down_right.get_winning_cells()
         assert len(cells) == 4
         assert cells == [(2, 3), (3, 2), (4, 1), (5, 0)]
 
-    def test_diagonal_down_left_returns_4_cells(self) -> None:
-        b = self._build_diagonal_down_left()
-        cells = b.get_winning_cells()
+    def test_diagonal_down_left_returns_4_cells(
+        self, board_diagonal_down_left: Board
+    ) -> None:
+        cells = board_diagonal_down_left.get_winning_cells()
         assert len(cells) == 4
         assert cells == [(2, 3), (3, 4), (4, 5), (5, 6)]
 
