@@ -6,6 +6,7 @@ from connect_four.ai.ai_base import AIBase
 from connect_four.game.game import Game
 from connect_four.game.metrics import MetricsTracker
 from connect_four.game.player import Player
+from connect_four.game.validation import validate_ai_move
 
 
 def run_headless(
@@ -40,14 +41,8 @@ def run_headless(
                 ai = p2_ai
 
             start = time.perf_counter()
-            col = ai.choose_move(board, current_player)
+            col = validate_ai_move(ai, board, current_player)
             duration = time.perf_counter() - start
-
-            if col not in valid_moves:
-                raise ValueError(
-                    f"AI {ai.name} "
-                    f"returned invalid move {col}. Valid moves: {valid_moves}"
-                )
 
             game.make_move(col)
             tracker.record_move(
