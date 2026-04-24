@@ -85,44 +85,66 @@ class VisualGameController:
         renderer.set_tracker(self._tracker)
 
     def run(self) -> None:
-        """Run a visual (pygame) game session."""
-        clock = pygame.time.Clock()
-        self._tracker.start_game()
+        """Run a visual (pygame) game session with replay support."""
         try:
-            while True:
-                self._renderer.render()
-
-                if self._game.is_over:
-                    if self._game.winner is not None:
-                        self._tracker.end_game(self._game.winner.value)
-                    else:
-                        self._tracker.end_game(None)
-                    if self._game.winner is not None:
-                        self._renderer.highlight_win(
-                            self._game.board, self._game.winner
-                        )
-                        self._renderer.render()
-                    self._wait_for_exit()
+            while True:  # outer replay loop
+                self._setup_game()
+                result = self._play_game()
+                if result == "exit":
                     return
-
-                if self._is_ai_turn():
-                    self._do_ai_move()
-                    clock.tick(60)
-                    continue
-
-                action, col = self._renderer.handle_events()
-                if action == "quit":
-                    return
-                if action == "move" and col is not None:
-                    if self._game.board.is_valid_move(col):
-                        player = self._game.current_player
-                        self._game.make_move(col)
-                        self._tracker.record_move(
-                            player, col, duration=None, is_ai=False
-                        )
-                clock.tick(60)
         finally:
             self._renderer.close()
+
+    def _setup_game(self) -> None:
+        """Reset game state for a new game (or the first game)."""
+        self._game.reset()
+        self._renderer._show_dialog = False
+        self._renderer.clear_highlight()
+        self._tracker = MetricsTracker(
+            self._tracker.p1_name, self._tracker.p2_name, self._tracker.mode
+        )
+        self._renderer.set_tracker(self._tracker)
+        self._tracker.start_game()
+
+    def _play_game(self) -> str:
+        """Run the inner game loop. Returns 'replay' or 'exit'."""
+        clock = pygame.time.Clock()
+        while True:
+            self._renderer.render()
+
+            if self._game.is_over:
+                if self._game.winner is not None:
+                    self._tracker.end_game(self._game.winner.value)
+                else:
+                    self._tracker.end_game(None)
+                if self._game.winner is not None:
+                    self._renderer.highlight_win(self._game.board, self._game.winner)
+                self._renderer._show_dialog = True
+                self._renderer.render()
+                while True:
+                    self._renderer.render()
+                    action = self._renderer.handle_dialog_events()
+                    if action == "replay":
+                        pygame.event.get()  # Drain stale events
+                        return "replay"
+                    if action == "exit":
+                        return "exit"
+                    clock.tick(30)
+
+            if self._is_ai_turn():
+                self._do_ai_move()
+                clock.tick(60)
+                continue
+
+            action, col = self._renderer.handle_events()
+            if action == "quit":
+                return "exit"
+            if action == "move" and col is not None:
+                if self._game.board.is_valid_move(col):
+                    player = self._game.current_player
+                    self._game.make_move(col)
+                    self._tracker.record_move(player, col, duration=None, is_ai=False)
+            clock.tick(60)
 
     def _is_ai_turn(self) -> bool:
         return self._game.current_player in self._ai_map
@@ -159,14 +181,3 @@ class VisualGameController:
         if len(self._ai_map) == 2:
             self._renderer.render()
             pygame.time.delay(500)
-
-    def _wait_for_exit(self) -> None:
-        while True:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    return
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                    return
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    return
-            pygame.time.Clock().tick(30)
