@@ -52,6 +52,31 @@ class TestInfoPanelDraw:
         self.tracker.end_game(Player.PLAYER_1)
         self.panel.draw(self.screen, 700, self.tracker, Player.PLAYER_1, game_over=True)
 
+    def test_draw_game_over_shows_move_log(self):
+        self.tracker.start_game()
+        self.tracker.record_move(Player.PLAYER_1, 3, duration=0.5, is_ai=True)
+        self.tracker.record_move(Player.PLAYER_2, 4, duration=1.2, is_ai=True)
+        self.tracker.end_game(Player.PLAYER_1)
+        assert len(self.tracker.current_game_moves) == 0
+        assert len(self.tracker.completed_games) == 1
+        assert len(self.tracker.completed_games[-1].moves) == 2
+        self.panel.draw(self.screen, 700, self.tracker, Player.PLAYER_1, game_over=True)
+
+    def test_draw_game_over_reads_completed_games_moves(self):
+        self.tracker.start_game()
+        self.tracker.record_move(Player.PLAYER_1, 3, duration=0.5, is_ai=True)
+        self.tracker.end_game(Player.PLAYER_1)
+
+        with patch.object(
+            self.panel, "_draw_move_log", wraps=self.panel._draw_move_log
+        ) as mock_draw_log:
+            self.panel.draw(
+                self.screen, 700, self.tracker, Player.PLAYER_1, game_over=True
+            )
+            call_args = mock_draw_log.call_args
+            moves_arg = call_args[0][1]
+            assert len(moves_arg) == 1, f"Expected 1 move, got {len(moves_arg)}"
+
     def test_draw_game_over_no_completed_games_shows_draw(self):
         self.tracker.start_game()
         self.panel.draw(self.screen, 700, self.tracker, Player.PLAYER_1, game_over=True)

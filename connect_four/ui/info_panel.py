@@ -104,7 +104,10 @@ class InfoPanel:
         y = self._draw_divider(surface, y, x_offset)
 
         y = self._draw_section_title(surface, "Move Log", y, x_offset)
-        moves = tracker.current_game_moves
+        if game_over and tracker.completed_games:
+            moves = tracker.completed_games[-1].moves
+        else:
+            moves = tracker.current_game_moves
         available_height = self.height - y - PANEL_PADDING
         self._draw_move_log(surface, moves, y, available_height, x_offset)
 
