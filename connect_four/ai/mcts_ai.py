@@ -1,4 +1,5 @@
 from __future__ import annotations
+import math
 from connect_four.ai.ai_base import AIBase
 from typing import TYPE_CHECKING
 
@@ -14,7 +15,14 @@ class _MCTSNode:
         self.children: list[_MCTSNode] = []
         self.visists = 0
         self.wins = 0.0
-            
+        self.unexplored_moves = list(state.get_valid_moves())
+        
+    def uct_value(self, exploration_weight: float = 1.41) -> float:
+        if self.visists == 0:
+            return float('inf')
+        exploitation = self.wins / self.visists
+        exploration = exploration_weight * math.sqrt(math.log(self.parent.visists) / self.visists)
+        return exploitation + exploration
     
 class MctsAI(AIBase):
     def choose_move(self, board: Board, player: Player) -> int:
