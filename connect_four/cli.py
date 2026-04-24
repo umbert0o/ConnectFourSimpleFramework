@@ -8,7 +8,32 @@ from connect_four.ai.ai_base import AIBase
 from connect_four.game.game import Game
 
 
-def _load_ai_class(dotted_path: str) -> AIBase:
+def _parse_ai_params(params: list[str] | None) -> dict[str, int | float | bool | str]:
+    if not params:
+        return {}
+    result: dict[str, int | float | bool | str] = {}
+    for item in params:
+        if "=" not in item:
+            raise ValueError(
+                f"Invalid parameter format '{item}'. Expected 'key=value'."
+            )
+        key, value = item.split("=", 1)
+        if value.lstrip("-").isdigit():
+            result[key] = int(value)
+        else:
+            try:
+                result[key] = float(value)
+            except ValueError:
+                if value.lower() == "true":
+                    result[key] = True
+                elif value.lower() == "false":
+                    result[key] = False
+                else:
+                    result[key] = value
+    return result
+
+
+def _load_ai_class(dotted_path: str, params: dict | None = None) -> AIBase:
     if "." not in dotted_path:
         print(
             f"Error: Invalid AI path '{dotted_path}'. Expected 'module.ClassName' format."
@@ -36,7 +61,7 @@ def _load_ai_class(dotted_path: str) -> AIBase:
         sys.exit(1)
 
     try:
-        return cls()
+        return cls(**(params or {}))
     except Exception as exc:
         print(f"Error: Could not instantiate AI class '{dotted_path}': {exc}")
         sys.exit(1)
@@ -56,6 +81,20 @@ def _build_parser() -> argparse.ArgumentParser:
         "--p2-ai",
         default=None,
         help="Dotted path to AI class for Player 2. If omitted, P2 is human-controlled.",
+    )
+    parser.add_argument(
+        "--p1-ai-params",
+        nargs="*",
+        default=None,
+        metavar="KEY=VALUE",
+        help="Parameters to pass to P1 AI constructor (e.g. iterations=100).",
+    )
+    parser.add_argument(
+        "--p2-ai-params",
+        nargs="*",
+        default=None,
+        metavar="KEY=VALUE",
+        help="Parameters to pass to P2 AI constructor (e.g. iterations=100).",
     )
     parser.add_argument(
         "--headless",
@@ -86,8 +125,10 @@ def main() -> None:
     parser = _build_parser()
     args = parser.parse_args()
 
-    p1_ai = _load_ai_class(args.p1_ai) if args.p1_ai else None
-    p2_ai = _load_ai_class(args.p2_ai) if args.p2_ai else None
+    p1_params = _parse_ai_params(args.p1_ai_params)
+    p2_params = _parse_ai_params(args.p2_ai_params)
+    p1_ai = _load_ai_class(args.p1_ai, p1_params) if args.p1_ai else None
+    p2_ai = _load_ai_class(args.p2_ai, p2_params) if args.p2_ai else None
 
     if args.headless:
         if p1_ai is None or p2_ai is None:
