@@ -63,7 +63,7 @@ class InfoPanel:
 
         y = PANEL_PADDING
 
-        y = self._draw_section_title(surface, f"Mode: {tracker.mode}", y)
+        y = self._draw_section_title(surface, f"Mode: {tracker.mode}", y, x_offset)
         p1_label = self._font.render(
             f"P1: {tracker.p1_name}", True, self.MOVE_LOG_COLOR
         )
@@ -76,7 +76,7 @@ class InfoPanel:
         y += p2_label.get_height() + 12
 
         if game_over:
-            y = self._draw_section_title(surface, "Game Over", y)
+            y = self._draw_section_title(surface, "Game Over", y, x_offset)
             if tracker.completed_games:
                 winner_val = tracker.completed_games[-1].winner
                 winner_text = (
@@ -102,24 +102,26 @@ class InfoPanel:
             surface.blit(turn_text, (x_offset + PANEL_PADDING + 20, y))
             y += turn_text.get_height() + 12
 
-        y = self._draw_divider(surface, y)
+        y = self._draw_divider(surface, y, x_offset)
 
-        y = self._draw_section_title(surface, "Move Log", y)
+        y = self._draw_section_title(surface, "Move Log", y, x_offset)
         moves = tracker.current_game_moves
         available_height = self.height - y - PANEL_PADDING
         self._draw_move_log(surface, moves, y, available_height, x_offset)
 
-    def _draw_section_title(self, surface: pygame.Surface, text: str, y: int) -> int:
+    def _draw_section_title(
+        self, surface: pygame.Surface, text: str, y: int, x_offset: int
+    ) -> int:
         title = self._font.render(text, True, self.SECTION_TITLE_COLOR)
-        surface.blit(title, (PANEL_PADDING, y))
+        surface.blit(title, (x_offset + PANEL_PADDING, y))
         return y + title.get_height() + 8
 
-    def _draw_divider(self, surface: pygame.Surface, y: int) -> int:
+    def _draw_divider(self, surface: pygame.Surface, y: int, x_offset: int) -> int:
         pygame.draw.line(
             surface,
             self.DIVIDER_COLOR,
-            (PANEL_PADDING, y),
-            (PANEL_WIDTH - PANEL_PADDING, y),
+            (x_offset + PANEL_PADDING, y),
+            (x_offset + PANEL_WIDTH - PANEL_PADDING, y),
         )
         return y + 8
 

@@ -1,13 +1,14 @@
 """Tests for connect_four.ui.info_panel module."""
 
-import pygame
+from unittest.mock import MagicMock, patch
 
+import pygame
 import pytest
 
 from connect_four.game.metrics import MetricsTracker
 from connect_four.game.player import Player
 from connect_four.ui.info_panel import InfoPanel
-from connect_four.ui.renderer import PygameRenderer
+from connect_four.ui.renderer import PANEL_PADDING, PANEL_WIDTH, PygameRenderer
 
 
 class TestInfoPanelInit:
@@ -78,3 +79,78 @@ class TestRendererPanelIntegration:
         tracker.start_game()
         self.renderer.set_tracker(tracker)
         self.renderer.render()
+
+
+class TestSectionTitleXOffset:
+    def setup_method(self):
+        pygame.init()
+        self.font = pygame.font.SysFont("Arial", 22)
+        self.small_font = pygame.font.SysFont("Arial", 18)
+        self.panel = InfoPanel(280, 600, self.font, self.small_font)
+
+    def test_blit_x_includes_x_offset(self):
+        surface = MagicMock(spec=pygame.Surface)
+        with patch.object(self.panel, "_font") as mock_font:
+            rendered = MagicMock()
+            rendered.get_height.return_value = 20
+            mock_font.render.return_value = rendered
+            self.panel._draw_section_title(surface, "Test Title", 10, 700)
+            rendered_blit_calls = surface.blit.call_args_list
+            assert len(rendered_blit_calls) == 1
+            blit_pos = rendered_blit_calls[0][0][1]
+            assert blit_pos[0] == 700 + PANEL_PADDING
+            assert blit_pos[1] == 10
+
+    def test_blit_x_zero_offset(self):
+        surface = MagicMock(spec=pygame.Surface)
+        with patch.object(self.panel, "_font") as mock_font:
+            rendered = MagicMock()
+            rendered.get_height.return_value = 20
+            mock_font.render.return_value = rendered
+            self.panel._draw_section_title(surface, "Test", 5, 0)
+            blit_pos = surface.blit.call_args[0][1]
+            assert blit_pos[0] == PANEL_PADDING
+
+    def test_return_y_includes_title_height(self):
+        surface = MagicMock(spec=pygame.Surface)
+        with patch.object(self.panel, "_font") as mock_font:
+            rendered = MagicMock()
+            rendered.get_height.return_value = 24
+            mock_font.render.return_value = rendered
+            result_y = self.panel._draw_section_title(surface, "Test", 50, 700)
+            assert result_y == 50 + 24 + 8
+
+
+class TestDividerXOffset:
+    def setup_method(self):
+        pygame.init()
+        self.font = pygame.font.SysFont("Arial", 22)
+        self.small_font = pygame.font.SysFont("Arial", 18)
+        self.panel = InfoPanel(280, 600, self.font, self.small_font)
+
+    @patch("connect_four.ui.info_panel.pygame.draw.line")
+    def test_line_endpoints_include_x_offset(self, mock_line):
+        surface = MagicMock(spec=pygame.Surface)
+        self.panel._draw_divider(surface, 100, 700)
+        mock_line.assert_called_once()
+        call_args = mock_line.call_args
+        start_pos = call_args[0][2]
+        end_pos = call_args[0][3]
+        assert start_pos == (700 + PANEL_PADDING, 100)
+        assert end_pos == (700 + PANEL_WIDTH - PANEL_PADDING, 100)
+
+    @patch("connect_four.ui.info_panel.pygame.draw.line")
+    def test_line_endpoints_zero_offset(self, mock_line):
+        surface = MagicMock(spec=pygame.Surface)
+        self.panel._draw_divider(surface, 50, 0)
+        call_args = mock_line.call_args
+        start_pos = call_args[0][2]
+        end_pos = call_args[0][3]
+        assert start_pos == (PANEL_PADDING, 50)
+        assert end_pos == (PANEL_WIDTH - PANEL_PADDING, 50)
+
+    @patch("connect_four.ui.info_panel.pygame.draw.line")
+    def test_return_y_offset(self, mock_line):
+        surface = MagicMock(spec=pygame.Surface)
+        result_y = self.panel._draw_divider(surface, 200, 700)
+        assert result_y == 200 + 8
