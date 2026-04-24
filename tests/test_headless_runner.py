@@ -248,3 +248,173 @@ class TestOutputPath:
             assert total == 1
         finally:
             os.unlink(path)
+
+
+# ---------------------------------------------------------------------------
+# 10. run_headless — resource tracking (tracemalloc)
+# ---------------------------------------------------------------------------
+
+
+class TestHeadlessResources:
+    """Resources dict is present in JSON output per game."""
+
+    def test_resources_key_present_in_game_data(self) -> None:
+        import os
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+            path = f.name
+        try:
+            run_headless(RandomAI(), RandomAI(), games=1, output_path=path)
+            with open(path) as f:
+                data = json.load(f)
+            resources = data["games"][0]["resources"]
+            assert isinstance(resources, dict)
+        finally:
+            if os.path.exists(path):
+                os.unlink(path)
+
+
+class TestHeadlessResourceTypes:
+    """Resource values have correct types and are non-negative."""
+
+    def test_player1_wall_time_is_float(self) -> None:
+        import os
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+            path = f.name
+        try:
+            run_headless(RandomAI(), RandomAI(), games=1, output_path=path)
+            with open(path) as f:
+                data = json.load(f)
+            p1 = data["games"][0]["resources"]["player1"]
+            assert isinstance(p1["wall_time"], float)
+            assert p1["wall_time"] >= 0.0
+        finally:
+            if os.path.exists(path):
+                os.unlink(path)
+
+    def test_player1_peak_ram_bytes_is_int(self) -> None:
+        import os
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+            path = f.name
+        try:
+            run_headless(RandomAI(), RandomAI(), games=1, output_path=path)
+            with open(path) as f:
+                data = json.load(f)
+            p1 = data["games"][0]["resources"]["player1"]
+            assert isinstance(p1["peak_ram_bytes"], int)
+            assert p1["peak_ram_bytes"] >= 0
+        finally:
+            if os.path.exists(path):
+                os.unlink(path)
+
+    def test_player2_wall_time_is_float(self) -> None:
+        import os
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+            path = f.name
+        try:
+            run_headless(RandomAI(), RandomAI(), games=1, output_path=path)
+            with open(path) as f:
+                data = json.load(f)
+            p2 = data["games"][0]["resources"]["player2"]
+            assert isinstance(p2["wall_time"], float)
+            assert p2["wall_time"] >= 0.0
+        finally:
+            if os.path.exists(path):
+                os.unlink(path)
+
+    def test_player2_peak_ram_bytes_is_int(self) -> None:
+        import os
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+            path = f.name
+        try:
+            run_headless(RandomAI(), RandomAI(), games=1, output_path=path)
+            with open(path) as f:
+                data = json.load(f)
+            p2 = data["games"][0]["resources"]["player2"]
+            assert isinstance(p2["peak_ram_bytes"], int)
+            assert p2["peak_ram_bytes"] >= 0
+        finally:
+            if os.path.exists(path):
+                os.unlink(path)
+
+
+class TestHeadlessResourceKeys:
+    """Resources dict has exactly player1 and player2 keys."""
+
+    def test_resources_has_player1_and_player2_only(self) -> None:
+        import os
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+            path = f.name
+        try:
+            run_headless(RandomAI(), RandomAI(), games=1, output_path=path)
+            with open(path) as f:
+                data = json.load(f)
+            resources = data["games"][0]["resources"]
+            assert set(resources.keys()) == {"player1", "player2"}
+        finally:
+            if os.path.exists(path):
+                os.unlink(path)
+
+
+class TestHeadlessResourcesMultipleGames:
+    """Each game has its own independent resources dict."""
+
+    def test_each_game_has_independent_resources(self) -> None:
+        import os
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+            path = f.name
+        try:
+            run_headless(RandomAI(), RandomAI(), games=3, output_path=path)
+            with open(path) as f:
+                data = json.load(f)
+            assert len(data["games"]) == 3
+            # Each game must have its own resources dict
+            res0 = data["games"][0]["resources"]
+            res1 = data["games"][1]["resources"]
+            res2 = data["games"][2]["resources"]
+            # Not the same reference (independent dicts)
+            assert res0 is not res1
+            assert res1 is not res2
+            # Each has correct keys
+            for res in [res0, res1, res2]:
+                assert set(res.keys()) == {"player1", "player2"}
+        finally:
+            if os.path.exists(path):
+                os.unlink(path)
+
+
+class TestHeadlessResourcesSameNameAI:
+    """Resources are tracked per-player slot, not per-AI class name."""
+
+    def test_same_ai_class_both_players(self) -> None:
+        import os
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+            path = f.name
+        try:
+            run_headless(RandomAI(), RandomAI(), games=1, output_path=path)
+            with open(path) as f:
+                data = json.load(f)
+            resources = data["games"][0]["resources"]
+            assert "player1" in resources
+            assert "player2" in resources
+            # Both entries should have valid data
+            assert isinstance(resources["player1"]["wall_time"], float)
+            assert isinstance(resources["player2"]["wall_time"], float)
+        finally:
+            if os.path.exists(path):
+                os.unlink(path)

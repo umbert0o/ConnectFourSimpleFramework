@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import time
+import tracemalloc
 
 from connect_four.ai.ai_base import AIBase
 from connect_four.game.game import Game
-from connect_four.game.metrics import MetricsTracker
+from connect_four.game.metrics import MetricsTracker, ResourceUsage
 from connect_four.game.player import Player
 from connect_four.game.validation import validate_ai_move
 
@@ -30,6 +31,13 @@ def run_headless(
         tracker.start_game()
         game = Game()
 
+        algo_wall_time: dict[str, float] = {"player1": 0.0, "player2": 0.0}
+        algo_peak_ram: dict[str, int] = {"player1": 0, "player2": 0}
+        if not tracemalloc.is_tracing():
+            tracemalloc.start()
+        else:
+            tracemalloc.clear_traces()
+
         while not game.is_over:
             board = game.board
             current_player = game.current_player
@@ -40,9 +48,15 @@ def run_headless(
             else:
                 ai = p2_ai
 
+            mem_before = tracemalloc.get_traced_memory()[0]
             start = time.perf_counter()
             col = validate_ai_move(ai, board, current_player)
             duration = time.perf_counter() - start
+            mem_after = tracemalloc.get_traced_memory()[0]
+            ram_delta = mem_after - mem_before
+            player_key = "player1" if current_player == Player.PLAYER_1 else "player2"
+            algo_wall_time[player_key] += duration
+            algo_peak_ram[player_key] = max(algo_peak_ram[player_key], ram_delta)
 
             game.make_move(col)
             tracker.record_move(
@@ -60,7 +74,18 @@ def run_headless(
             results["draws"] += 1
             result_str = "Draw"
 
-        tracker.end_game(winner.value if winner else None)
+        resources = {
+            "player1": ResourceUsage(
+                wall_time=algo_wall_time["player1"],
+                peak_ram_bytes=algo_peak_ram["player1"],
+            ),
+            "player2": ResourceUsage(
+                wall_time=algo_wall_time["player2"],
+                peak_ram_bytes=algo_peak_ram["player2"],
+            ),
+        }
+        tracker.end_game(winner.value if winner else None, resources=resources)
+        tracemalloc.stop()
 
         print(f"Game {game_num}: {p1_ai.name} (P1) vs {p2_ai.name} (P2) — {result_str}")
 
