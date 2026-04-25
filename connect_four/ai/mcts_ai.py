@@ -1,14 +1,10 @@
 from __future__ import annotations
 import math
 import random
-from typing import TYPE_CHECKING
+from connect_four.game.board import Board
+from connect_four.game.player import Player
 
 from connect_four.ai.ai_base import AIBase
-
-if TYPE_CHECKING:
-    from connect_four.game.board import Board
-    from connect_four.game.player import Player
-
 
 class _MCTSNode:
     """Represents a single state in the search tree."""
@@ -94,4 +90,4 @@ class MCTSAI(AIBase):
 
     @property
     def name(self) -> str:
-        return "MctsAI"
+        return f"MCTSAI - {self._iterations} Iter, {self._exploration_weight} EX"
