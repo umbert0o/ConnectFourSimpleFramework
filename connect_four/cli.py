@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import importlib
+import os
 import sys
 
 from connect_four.ai.ai_base import AIBase
@@ -118,6 +119,13 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Export headless results to a JSON file.",
     )
+    parser.add_argument(
+        "-j",
+        "--workers",
+        type=int,
+        default=None,
+        help="Number of parallel workers for headless mode (default: number of CPU cores).",
+    )
     return parser
 
 
@@ -135,7 +143,10 @@ def main() -> None:
             parser.error("--headless requires both --p1-ai and --p2-ai.")
         from connect_four.headless_runner import run_headless
 
-        run_headless(p1_ai, p2_ai, games=args.games, output_path=args.output)
+        workers = args.workers if args.workers is not None else (os.cpu_count() or 1)
+        run_headless(
+            p1_ai, p2_ai, games=args.games, output_path=args.output, workers=workers
+        )
         return
 
     game = Game()

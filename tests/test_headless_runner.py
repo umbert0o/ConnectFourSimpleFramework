@@ -418,3 +418,100 @@ class TestHeadlessResourcesSameNameAI:
         finally:
             if os.path.exists(path):
                 os.unlink(path)
+
+
+# ---------------------------------------------------------------------------
+# 12. run_headless — parallel execution (workers > 1)
+# ---------------------------------------------------------------------------
+
+
+class TestParallelExecution:
+    """Parallel game execution via multiprocessing.ProcessPoolExecutor."""
+
+    def test_workers_param_exists(self) -> None:
+        """run_headless accepts a workers parameter."""
+        import inspect
+
+        sig = inspect.signature(run_headless)
+        assert "workers" in sig.parameters
+
+    def test_parallel_runs_games(self) -> None:
+        """workers=2 runs games in parallel and returns correct results."""
+        p1_ai = RandomAI()
+        p2_ai = RandomAI()
+        results = run_headless(p1_ai, p2_ai, games=4, workers=2)
+        total = results["player1_wins"] + results["player2_wins"] + results["draws"]
+        assert total == 4
+
+    def test_parallel_output_json_has_correct_game_count(self) -> None:
+        """Parallel execution produces JSON with all games numbered 1..N."""
+        import os
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+            path = f.name
+        try:
+            run_headless(RandomAI(), RandomAI(), games=4, workers=2, output_path=path)
+            with open(path) as f:
+                data = json.load(f)
+            assert len(data["games"]) == 4
+            game_numbers = [g["game_number"] for g in data["games"]]
+            assert game_numbers == [1, 2, 3, 4]
+        finally:
+            os.unlink(path)
+
+    def test_parallel_print_output_in_order(self) -> None:
+        """Parallel execution prints Game 1..N in order (buffered, not streamed)."""
+        import contextlib
+        import io
+
+        p1_ai = RandomAI()
+        p2_ai = RandomAI()
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            run_headless(p1_ai, p2_ai, games=4, workers=2)
+        output = f.getvalue()
+        lines = [line for line in output.splitlines() if line.startswith("Game ")]
+        game_nums = [int(line.split(":")[0].split("Game ")[1]) for line in lines]
+        assert game_nums == [1, 2, 3, 4]
+
+    def test_parallel_resources_tracked_per_game(self) -> None:
+        """Each game in parallel mode has its own resources dict."""
+        import os
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+            path = f.name
+        try:
+            run_headless(RandomAI(), RandomAI(), games=3, workers=2, output_path=path)
+            with open(path) as f:
+                data = json.load(f)
+            for game in data["games"]:
+                assert "resources" in game
+                assert "player1" in game["resources"]
+                assert "player2" in game["resources"]
+        finally:
+            os.unlink(path)
+
+    def test_uneven_chunk_distribution(self) -> None:
+        """7 games / 3 workers distributes correctly (remainder to last chunk)."""
+        import os
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+            path = f.name
+        try:
+            run_headless(RandomAI(), RandomAI(), games=7, workers=3, output_path=path)
+            with open(path) as f:
+                data = json.load(f)
+            assert len(data["games"]) == 7
+        finally:
+            os.unlink(path)
+
+    def test_workers_clamped_to_games_count(self) -> None:
+        """When workers > games, clamp to games count."""
+        p1_ai = RandomAI()
+        p2_ai = RandomAI()
+        results = run_headless(p1_ai, p2_ai, games=2, workers=8)
+        total = results["player1_wins"] + results["player2_wins"] + results["draws"]
+        assert total == 2
