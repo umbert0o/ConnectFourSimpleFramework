@@ -62,6 +62,30 @@ Results after 100 games: RandomAI won 52, MctsAI won 40, Draws: 8
 Results exported to results.json
 ```
 
+### Parallel Headless Execution
+
+By default, headless games run in parallel across all available CPU cores. Use `-j` (or `--workers`) to control parallelism:
+
+```bash
+# Run 100 games across all CPU cores (default)
+python -m connect_four --headless \
+  --p1-ai connect_four.ai.mcts_ai.MctsAI --p1-ai-params iterations=500 \
+  --p2-ai connect_four.ai.random_ai.RandomAI \
+  --games 100 --output results.json
+
+# Limit to 4 workers explicitly
+python -m connect_four --headless \
+  --p1-ai connect_four.ai.mcts_ai.MctsAI --p2-ai connect_four.ai.random_ai.RandomAI \
+  --games 50 -j 4 --output results.json
+
+# Sequential (single worker) — useful for debugging
+python -m connect_four --headless \
+  --p1-ai connect_four.ai.random_ai.RandomAI --p2-ai connect_four.ai.random_ai.RandomAI \
+  --games 10 -j 1
+```
+
+Results are always printed and exported in order (Game 1..N), regardless of worker count. Resource tracking (wall-clock time and RAM usage per algorithm) works correctly in parallel mode.
+
 ## CLI Reference
 
 | Flag | Default | Description |
@@ -73,6 +97,7 @@ Results exported to results.json
 | `--headless` | `false` | Run without pygame window (requires both `--p1-ai` and `--p2-ai`) |
 | `--games <n>` | `1` | Number of games in headless mode |
 | `--output <path>` | *(none)* | Export headless results to JSON |
+| `-j <n>`, `--workers <n>` | *CPU cores* | Number of parallel workers in headless mode (default: all cores) |
 | `--timeout <seconds>` | *(none)* | Per-move timeout for AI (UNIX only) |
 
 ### AI Path Format
