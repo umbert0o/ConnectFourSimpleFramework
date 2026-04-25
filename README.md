@@ -278,6 +278,7 @@ connect_four/
 ├── __main__.py            # Entry point
 ├── cli.py                 # CLI with argparse, dynamic AI class loading
 ├── headless_runner.py     # AI-vs-AI runner with resource tracking
+├── summarize_results.py  # Per-AI summary statistics from headless runner JSON output
 ├── game/                  # Pure game logic (no pygame dependency)
 │   ├── board.py           # Immutable Board
 │   ├── game.py            # Game orchestrator
