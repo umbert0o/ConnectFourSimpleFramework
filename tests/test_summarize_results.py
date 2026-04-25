@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -11,7 +12,7 @@ import pytest
 
 # Import functions from the not-yet-existing script
 # These will fail until summarize_results.py is created
-from summarize_results import compute_summary, load_results, write_summary
+from connect_four.summarize_results import compute_summary, load_results, write_summary
 
 
 # ---------------------------------------------------------------------------
@@ -509,7 +510,12 @@ class TestComputeMode:
 class TestCLIErrors:
     def test_nonexistent_file_exits_1(self) -> None:
         proc = subprocess.run(
-            [sys.executable, "summarize_results.py", "/no/such/file.json"],
+            [
+                sys.executable,
+                "-m",
+                "connect_four.summarize_results",
+                "/no/such/file.json",
+            ],
             capture_output=True,
             text=True,
         )
@@ -519,7 +525,7 @@ class TestCLIErrors:
         bad_json = tmp_path / "bad.json"
         bad_json.write_text("not valid json {{{")
         proc = subprocess.run(
-            [sys.executable, "summarize_results.py", str(bad_json)],
+            [sys.executable, "-m", "connect_four.summarize_results", str(bad_json)],
             capture_output=True,
             text=True,
         )
@@ -529,7 +535,7 @@ class TestCLIErrors:
         no_games = tmp_path / "no_games.json"
         no_games.write_text("{}")
         proc = subprocess.run(
-            [sys.executable, "summarize_results.py", str(no_games)],
+            [sys.executable, "-m", "connect_four.summarize_results", str(no_games)],
             capture_output=True,
             text=True,
         )
@@ -545,11 +551,14 @@ class TestCLIOutput:
     def _run_cli(
         self, input_path: Path, tmp_path: Path
     ) -> subprocess.CompletedProcess[str]:
+        env = os.environ.copy()
+        env["PYTHONPATH"] = str(Path(__file__).resolve().parent.parent)
         return subprocess.run(
-            [sys.executable, "summarize_results.py", str(input_path)],
+            [sys.executable, "-m", "connect_four.summarize_results", str(input_path)],
             capture_output=True,
             text=True,
             cwd=str(tmp_path),
+            env=env,
         )
 
     def test_output_file_created_with_correct_name(self, tmp_path: Path) -> None:
