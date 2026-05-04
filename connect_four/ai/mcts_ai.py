@@ -73,9 +73,9 @@ class MCTSAI(AIBase):
         while True:
             winner = state.check_winner()
             if winner is not None:
-                return 1.0 if winner == self._root_player else -1.0
+                return 1.0 if winner == self._root_player else 0
             if state.is_full():
-                return 0.0
+                return 0.5
             col = random.choice(state.get_valid_moves())
             state = state.drop_piece(col, curr)
             curr = Player.PLAYER_2 if curr == Player.PLAYER_1 else Player.PLAYER_1

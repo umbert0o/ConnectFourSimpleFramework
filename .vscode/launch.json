@@ -1,0 +1,19 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Connect Four (MCTS)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "connect_four",
+      "args": [
+        "--p2-ai",
+        "connect_four.ai.mcts_ai.MCTSAI",
+        "--p2-ai-params",
+        "iterations=10000",
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    }
+  ]
+}
