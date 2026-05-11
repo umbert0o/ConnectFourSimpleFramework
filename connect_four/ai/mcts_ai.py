@@ -7,7 +7,6 @@ from connect_four.game.player import Player
 from connect_four.ai.ai_base import AIBase
 
 class _MCTSNode:
-    """Represents a single state in the search tree."""
     def __init__(self, state: Board, parent: _MCTSNode | None = None, 
                  action: int | None = None, current_player: Player | None = None):
         self.state = state
@@ -20,7 +19,6 @@ class _MCTSNode:
         self.unexplored_moves = list(state.get_valid_moves())
 
     def uct_value(self, exploration_weight: float) -> float:
-        """Upper Confidence Bound for Trees formula."""
         if self.visits == 0:
             return float('inf')
         exploitation = self.wins / self.visits
@@ -28,9 +26,7 @@ class _MCTSNode:
         return exploitation + exploration
 
 
-class MCTSAI(AIBase):
-    """Monte Carlo Tree Search AI for Connect Four."""
-    
+class MCTSAI(AIBase):  
     def __init__(self, iterations: int = 1000, exploration_weight: float = 1.41, **kwargs):
         super().__init__(**kwargs)
         self._iterations = iterations
@@ -68,7 +64,6 @@ class MCTSAI(AIBase):
         return max(root.children, key=lambda c: c.visits).action
 
     def _simulate(self, state: Board, current_player: Player) -> float:
-        """Random playout until terminal state. Returns +1.0 (root win), -1.0 (root loss), 0.0 (draw)."""
         curr = current_player
         while True:
             winner = state.check_winner()
@@ -81,7 +76,6 @@ class MCTSAI(AIBase):
             curr = Player.PLAYER_2 if curr == Player.PLAYER_1 else Player.PLAYER_1
 
     def _backpropagate(self, node: _MCTSNode, result: float):
-        """Propagate result up the tree, flipping perspective at each level for zero-sum tracking."""
         while node is not None:
             node.visits += 1
             node.wins += result
